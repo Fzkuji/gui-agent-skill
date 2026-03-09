@@ -1,8 +1,8 @@
-# 🖥️ GUI Agent — AI-Powered Desktop Automation for macOS
+# 🖥️ GUI Agent Skills
 
-> Let your AI assistant see, click, type, and navigate any macOS app — no dedicated GUI model needed.
+> AI-powered desktop automation skills for macOS — let any LLM see, click, type, and navigate any app.
 
-GUI Agent turns any LLM with tool-calling into a desktop automation agent. It uses **OCR + template matching + AppleScript** for fast, local element detection, with vision model as a fallback for complex cases. No extra model deployment required.
+A skill pack that turns any LLM with tool-calling into a desktop automation agent. Uses **OCR + template matching + AppleScript** for fast, local element detection, with vision model as a fallback. No dedicated GUI model needed.
 
 ## ✨ Features
 
