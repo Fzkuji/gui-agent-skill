@@ -146,6 +146,10 @@ JSON workflows in `workflows/` are "happy path" recipes. Use them as starting po
 **Try first, handle denial gracefully.** Don't pre-configure.
 - If cliclick/osascript fails with permission error → macOS shows a dialog
 - Tell user: "Click Allow in the Accessibility dialog, then I'll retry"
+- **Screen Recording** (for `screencapture`): Required by macOS. If `screencapture` returns "could not create image from display", the running process needs Screen Recording permission in **System Settings → Privacy & Security → Screen Recording**.
+
+### PATH Issues (headless / OpenClaw environments)
+macOS CLI tools like `screencapture` live in `/usr/sbin/` which may not be in PATH for background services (e.g., OpenClaw gateway, launchd agents). All scripts in this skill use the full path `/usr/sbin/screencapture` to avoid this. If you add new scripts that call `screencapture`, always use the absolute path.
 
 ### Locale (CRITICAL for CJK)
 ```bash
@@ -171,6 +175,71 @@ Without this, Chinese text gets garbled during paste. Set in every exec call.
 | Cmd+Delete | Deletes files | Never in Finder |
 | Cmd+W | Closes window | When you're sure which window |
 | Cmd+Q | Quits app | Verify app first |
+
+---
+
+## Exploring a New App
+
+When you encounter an app for the first time, **explore before automating**:
+
+### 1. Quick Recon (~30 seconds)
+```bash
+# What does the app look like?
+gui_agent.py observe --app AppName
+
+# What's the AX tree? (accessibility elements)
+osascript -l JavaScript -e '
+var se = Application("System Events");
+var p = se.processes["AppName"];
+var w = p.windows[0];
+// List top-level children with class, name, position
+var result = [];
+function scan(elem, depth) {
+    if (depth > 3) return;
+    try {
+        var cls = elem.class();
+        var nm = elem.name();
+        var pos = elem.position();
+        var sz = elem.size();
+        result.push("  ".repeat(depth) + cls + ": " + nm + " @" + pos[0]+","+pos[1] + " " + sz[0]+"x"+sz[1]);
+    } catch(e) {}
+    try {
+        var ch = elem.uiElements();
+        for (var i=0; i<ch.length; i++) scan(ch[i], depth+1);
+    } catch(e) {}
+}
+scan(w, 0);
+result.join("\n");
+'
+
+# What text is visible? (OCR scan)
+gui_agent.py find "some keyword"
+```
+
+### 2. Document What You Find
+Create `apps/appname.json` with:
+- Window position & size
+- Key UI regions (sidebar, main area, input fields)
+- Which approach works: AX (buttons/fields), OCR (text), or coordinates
+- Quirks (WebView inputs, non-standard panels, auto-lock behavior)
+
+### 3. Build a Minimal Workflow
+Start with the simplest flow. Test each step individually:
+```
+Observe → single action → verify → next action
+```
+Once stable, batch actions for speed.
+
+### 4. Coordinate Gotchas
+- **OCR coordinates** may differ from **AX/cliclick logical coordinates** depending on display scaling
+- Always verify by: AX `position()` → cliclick click → screenshot → confirm
+- On Retina displays: check if OCR returns physical/2 or logical pixels
+- When in doubt, use AX `position()` + `size()` to get the center point of elements
+
+### 5. Privacy
+- **Never commit passwords, tokens, or personal data** to app profiles or skill files
+- Reference TOOLS.md or environment variables for sensitive values
+- App profiles should describe *how* to get credentials, not *what* they are
 
 ---
 
@@ -204,6 +273,13 @@ Each profile defines: layout (sidebar width, input position), navigation (sideba
 - **Search**: Cmd+F works well.
 - **Input**: OCR can find "Write a message" placeholder.
 - **Send**: Enter (configurable).
+
+### GlobalProtect (`apps/globalprotect.json`)
+- **Type**: System tray app (menu bar, not standard window).
+- **AX**: Panel from menu bar click often has no children. Quit+reopen to get real window.
+- **Password input**: WebView — must use `cliclick`, not `osascript keystroke`.
+- **States**: Disconnected → Connect → SSO Sign In → Password → Connected.
+- **Key quirk**: If "Disconnect" button exists, VPN is connected even if login window is still open.
 
 ---
 

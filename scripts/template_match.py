@@ -62,7 +62,7 @@ def get_screen_resolution():
 
 def take_screenshot(path=SCREENSHOT_PATH):
     """Take a screenshot and return the image."""
-    subprocess.run(["screencapture", "-x", path], check=True)
+    subprocess.run(["/usr/sbin/screencapture", "-x", path], check=True)
     img = cv2.imread(path)
     return img
 

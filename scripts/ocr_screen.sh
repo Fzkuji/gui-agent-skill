@@ -6,7 +6,7 @@
 IMG="${1:-/tmp/screen_ocr.png}"
 
 if [ -z "$1" ]; then
-    screencapture -x "$IMG"
+    /usr/sbin/screencapture -x "$IMG"
 fi
 
 swift - "$IMG" << 'SWIFT'

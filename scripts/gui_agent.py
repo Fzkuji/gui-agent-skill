@@ -78,7 +78,7 @@ def check_template(app, name):
 
 # Level 3: OCR (~1.6s)
 def screenshot(path="/tmp/gui_agent_screen.png"):
-    subprocess.run(["screencapture", "-x", path], check=True, timeout=5)
+    subprocess.run(["/usr/sbin/screencapture", "-x", path], check=True, timeout=5)
     return path
 
 def ocr_full(img_path=None):

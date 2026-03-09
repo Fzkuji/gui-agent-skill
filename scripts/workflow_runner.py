@@ -43,7 +43,7 @@ def shell(cmd, timeout=10):
     return r.stdout.strip()
 
 def screenshot(path="/tmp/wf_screen.png"):
-    subprocess.run(["screencapture", "-x", path], check=True)
+    subprocess.run(["/usr/sbin/screencapture", "-x", path], check=True)
     return path
 
 def ocr(img_path=None):
