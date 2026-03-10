@@ -287,6 +287,39 @@ Once stable, batch actions for speed.
 
 ---
 
+## Hard-Won Lessons (from real failures)
+
+### Focus Management (最重要)
+- **Any app can steal focus at any time** — especially SSO/auth pop-ups
+- `osascript keystroke` sends to **whatever has focus**, not the app you intended
+- **Never assume focus** — use `cliclick c:x,y` to click the target first
+- **Multi-app interaction order**: finish the focus-stealing app first (e.g. auth window), then operate the passive app (e.g. 1Password)
+
+### Coordinate Reliability
+- **AX is the most reliable coordinate source**: `entireContents()` → find by role + title → get position + size
+- **Window position changes invalidate coordinates** — re-query AX before every action
+- **cliclick only accepts integers**: `position + size/2` may produce decimals → use `Math.round()`
+- **Use AX for positioning, screenshots for state verification** — don't estimate coordinates from screenshots
+
+### Password / Sensitive Input
+- **Cmd+V paste > cliclick t: typing**: `cliclick t:` truncates on special chars (`!@#` etc.)
+- **1Password**: clicking password dots (●●●●) in the detail view **auto-copies to clipboard** — simplest method
+- **1Password clipboard TTL is 90 seconds** — copy password as the **last step** before pasting
+- **`op` CLI needs Touch ID** — won't work on headless/remote machines; use GUI instead
+
+### WebView Quirks
+- `osascript keystroke` doesn't work inside WebViews (e.g. GlobalProtect SSO)
+- `cliclick kp:return` may not trigger WebView buttons either
+- **Must use `cliclick c:x,y`** to click WebView buttons directly
+- WebViews need load time — `sleep 4` after navigation before interacting
+
+### Debugging
+- **Screenshot every step**: `/usr/sbin/screencapture -x path.png` → vision model analysis
+- **AX state check**: JXA `entireContents()` to list all elements with role/title/position
+- **Never retry blindly** — screenshot first, understand current state, then decide next action
+
+---
+
 ## App Profiles
 
 App-specific configs live in `apps/*.json`. List them:
