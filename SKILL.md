@@ -9,14 +9,16 @@ You ARE the agent loop: Observe → Decide → Act → Verify.
 
 ## Scene Index
 
-Tasks are modeled as **hierarchical scenes**. Each scene has a goal and decomposes into sub-scenes (meta actions) → atomic actions. Read only what you need.
+Tasks are modeled as **hierarchical scenes**, organized by app. Each scene decomposes into meta actions → atomic actions. Read only what you need.
 
 | Scene | File | Goal |
 |-------|------|------|
-| **Atomic Actions** | `scenes/_actions.yaml` | All leaf-level operations (click, type, paste, AX scan...) |
+| **Atomic Actions** | `scenes/_actions.yaml` | Shared primitives (click, type, paste, AX scan...) |
+| **WeChat** | `scenes/wechat.yaml` | Send/read messages, scroll history in WeChat |
+| **Discord** | `scenes/discord.yaml` | Send/read messages in Discord |
+| **Telegram** | `scenes/telegram.yaml` | Send/read messages in Telegram |
 | **1Password** | `scenes/1password.yaml` | Retrieve credentials from 1Password GUI |
-| **VPN Reconnect** | `scenes/vpn-reconnect.yaml` | Reconnect GlobalProtect VPN via SSO (depends on: 1password) |
-| **Messaging** | `scenes/messaging.yaml` | Send/read messages in WeChat, Discord, Telegram |
+| **VPN Reconnect** | `scenes/vpn-reconnect.yaml` | Reconnect GlobalProtect VPN (depends on: 1password) |
 | **App Exploration** | `scenes/app-explore.yaml` | Map an unfamiliar app's UI for automation |
 
 ### How scenes compose
@@ -49,9 +51,11 @@ VPN Reconnect (big scene)
 ```
 What do you need to do?
 │
+├── WeChat (发消息/读消息)? → read scenes/wechat.yaml
+├── Discord? → read scenes/discord.yaml
+├── Telegram? → read scenes/telegram.yaml
 ├── VPN/SSH down? → read scenes/vpn-reconnect.yaml
 ├── Need a password? → read scenes/1password.yaml
-├── Send/read chat messages? → read scenes/messaging.yaml
 ├── New app, unknown UI? → read scenes/app-explore.yaml
 ├── Just need one atomic op? → read scenes/_actions.yaml
 └── Core principles/lessons? → read docs/core.md
@@ -69,12 +73,14 @@ What do you need to do?
 ```
 gui-agent/
 ├── SKILL.md              # This index
-├── scenes/               # Hierarchical scene definitions (load on demand)
-│   ├── _actions.yaml     # Atomic action catalog
-│   ├── 1password.yaml    # 1Password operations
-│   ├── vpn-reconnect.yaml
-│   ├── messaging.yaml
-│   └── app-explore.yaml
+├── scenes/               # Scenes organized by app (load on demand)
+│   ├── _actions.yaml     # Atomic action catalog (shared by all scenes)
+│   ├── wechat.yaml       # WeChat: send/read/scroll
+│   ├── discord.yaml      # Discord: send/read
+│   ├── telegram.yaml     # Telegram: send/read
+│   ├── 1password.yaml    # 1Password: get credentials
+│   ├── vpn-reconnect.yaml  # GlobalProtect VPN (refs 1password)
+│   └── app-explore.yaml  # Explore unknown apps
 ├── docs/                 # Detailed reference docs
 │   └── core.md           # Core principles & hard-won lessons
 ├── apps/                 # App profiles (JSON)
