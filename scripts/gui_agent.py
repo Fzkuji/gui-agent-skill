@@ -509,14 +509,13 @@ def task_read_messages(app_name, params, log):
     profile = get_profile_or_default(app_name)
     app = profile["app"]
     
-    hide_other_apps(app)
+    # Read-only: no need to hide other apps, just activate
     activate(app)
     
     if contact:
         _navigate_to_contact(profile, contact, log)
     
     state = observe(app)
-    restore_apps()
     
     messages = state.get("main", state.get("texts", []))
     return True, "\n".join(messages)
@@ -529,12 +528,11 @@ def task_scroll_history(app_name, params, log):
     profile = get_profile_or_default(app_name)
     app = profile["app"]
     
-    hide_other_apps(app)
+    # Read-only: no need to hide other apps
     activate(app)
     
     if contact:
         if not _navigate_to_contact(profile, contact, log):
-            restore_apps()
             return False, f"Could not navigate to '{contact}'"
         time.sleep(0.5)
     
@@ -565,7 +563,6 @@ def task_scroll_history(app_name, params, log):
     osascript('tell application "System Events" to key code 119')  # End key
     time.sleep(0.3)
     
-    restore_apps()
     return True, "\n".join(all_messages)
 
 
