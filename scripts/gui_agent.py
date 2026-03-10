@@ -17,6 +17,7 @@ Usage:
   gui_agent.py tasks
 """
 
+import difflib
 import json
 import os
 import subprocess
@@ -366,16 +367,27 @@ def resolve_app_name(name):
     except:
         pass
     
-    # 4. Check /Applications (fuzzy)
+    # 4. Check all known apps (running + installed) with fuzzy matching
+    all_apps = []
     try:
-        apps_dir = Path("/Applications")
-        for app in apps_dir.iterdir():
-            if app.suffix == ".app":
-                app_name_clean = app.stem
-                if lower in app_name_clean.lower() or app_name_clean.lower() in lower:
-                    return app_name_clean
+        all_apps.extend(running)
     except:
         pass
+    try:
+        all_apps.extend(f.stem for f in Path("/Applications").iterdir() if f.suffix == ".app")
+    except:
+        pass
+    
+    # 4a. Substring match first
+    for app in all_apps:
+        if lower in app.lower() or app.lower() in lower:
+            return app
+    
+    # 4b. Fuzzy match (typo-tolerant)
+    app_lower_map = {a.lower(): a for a in all_apps}
+    matches = difflib.get_close_matches(lower, app_lower_map.keys(), n=1, cutoff=0.5)
+    if matches:
+        return app_lower_map[matches[0]]
     
     # 5. Give up, return as-is (let activate fail gracefully)
     return name
