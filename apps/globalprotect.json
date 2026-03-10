@@ -37,13 +37,6 @@
       "4. Type password: AX find text field → get position → cliclick c:x,y → cliclick t:password → cliclick kp:return",
       "5. Verify: Wait 8-10s, SSH test."
     ],
-<<<<<<< HEAD
-    "password_notes": [
-      "SSO password comes from user's password manager — check TOOLS.md for source",
-      "osascript keystroke() does NOT work in GP WebView — must use cliclick",
-      "AX findTextField() gets position → calculate center → cliclick click+type",
-      "SSO page has timeout — complete Next→password→Enter quickly",
-=======
     "password_source": {
       "primary": "1Password GUI (no Touch ID needed)",
       "flow": [
@@ -60,7 +53,6 @@
       "AX findTextField() gets position → calculate center → cliclick click+type",
       "SSO page has timeout — complete Next→password→Enter quickly",
       "1Password GUI method preferred over op CLI (avoids Touch ID)",
->>>>>>> 1dedf92 (feat: add 1Password GUI password retrieval for GlobalProtect)
       "Max 3 retries on failure"
     ]
   },
