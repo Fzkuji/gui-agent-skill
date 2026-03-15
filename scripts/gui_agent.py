@@ -77,6 +77,19 @@ def check_template(app, name):
     except:
         return None
 
+def auto_learn_template(app, name, click_x, click_y, source_info=""):
+    """Auto-learn a UI element after a successful click. Fire-and-forget."""
+    try:
+        src_arg = f'--source "{source_info}"' if source_info else ""
+        r = shell(f'{PYTHON} {SCRIPT_DIR / "template_match.py"} auto_learn '
+                   f'--app {app} --name {name} --click {click_x},{click_y} {src_arg}')
+        data = json.loads(r)
+        if data.get("saved"):
+            return data
+    except:
+        pass
+    return None
+
 # Level 3: OCR (~1.6s)
 def screenshot(path="/tmp/gui_agent_screen.png"):
     subprocess.run(["/usr/sbin/screencapture", "-x", path], check=True, timeout=5)
@@ -457,12 +470,25 @@ def _navigate_to_contact(profile, contact, log):
         log("nav", f"chat with '{contact}' already open")
         return True
     
-    # Try sidebar click
+    # Try template match first (learned from previous interactions)
+    safe_contact = contact.replace(" ", "_").replace("/", "-")[:20]
+    tpl_name = f"contact_{safe_contact}"
+    tpl = check_template(profile["app"], tpl_name)
+    if tpl and tpl.get("found") and tpl["confidence"] > 0.9:
+        log("nav", f"template match '{contact}' at ({tpl['x']},{tpl['y']}) conf={tpl['confidence']}")
+        click_pos(tpl["x"], tpl["y"])
+        time.sleep(0.5)
+        return True
+    
+    # Try sidebar click via OCR
     matches = ocr_find(contact, {"x_max": sidebar_x_max})
     if matches:
         m = matches[0]
         log("nav", f"clicking sidebar '{m['text']}' at ({m['cx']},{m['cy']})")
         click_pos(m["cx"], m["cy"])
+        # Auto-learn this contact's position for next time
+        auto_learn_template(profile["app"], tpl_name, m["cx"], m["cy"],
+                           source_info=f"ocr:{m['text']}")
         time.sleep(0.5)
         return True
     
@@ -483,6 +509,10 @@ def _navigate_to_contact(profile, contact, log):
                 search_m = ocr_find("Search", {"x_max": sidebar_x_max, "y_max": 220})
                 if search_m:
                     click_pos(search_m[0]["cx"], search_m[0]["cy"])
+                    # Auto-learn search bar
+                    auto_learn_template(profile["app"], nav["search_bar"]["template"],
+                                       search_m[0]["cx"], search_m[0]["cy"],
+                                       source_info="ocr:Search")
                 else:
                     return False
             time.sleep(0.3)
@@ -503,6 +533,9 @@ def _navigate_to_contact(profile, contact, log):
                 continue
             log("nav", f"clicking result '{r['text']}' at ({r['cx']},{r['cy']})")
             click_pos(r["cx"], r["cy"])
+            # Auto-learn from search result too
+            auto_learn_template(profile["app"], tpl_name, r["cx"], r["cy"],
+                               source_info=f"search:{r['text']}")
             time.sleep(0.5)
             return True
         
