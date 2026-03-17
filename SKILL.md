@@ -49,7 +49,7 @@ User Intent ("click Connect button in GlobalProtect")
 
 ### When to use what — Decision Tree
 
-**ALWAYS try methods in this order (cheapest first):**
+**ALWAYS try methods in this order:**
 
 ```
   → osascript: tell process "AppName" to get UI elements
