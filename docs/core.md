@@ -121,3 +121,17 @@ Screen (0,0) ──────────────────────�
 | Dock | Full | System | Always has names + positions |
 | Menu bar | Full | System | Always has names + positions |
 | Status bar | Full | System | Each app's tray icon accessible |
+
+### OCR Text Matching Pitfalls
+- **Substring matching is dangerous**: searching "Scan" also matches "Deep Scan", "Smart Scan", "Scanner"
+- **Always use exact or contextual matching**: check if matched text IS the button, not just contains the keyword
+- **Position filtering alone is not enough**: "Deep Scan" label and "Scan" button may both be in the bottom 40% of the window
+- **Solution**: match exact text first, filter by position second. Or use template match for known buttons.
+
+### Coordinate Conversion (VERIFIED CORRECT)
+- **Window crop OCR**: retina coords → ÷2 = logical window-relative → + window position = screen coords
+  - Example: retina(1289,1229) → logical(644,614) → screen(855,802) ✅
+- **Resized fullscreen OCR** (sips -z 982 1512): output coords ARE screen logical coords directly
+  - Example: (855,801) ✅
+- **Both methods give same result** (±1px)
+- The previous "coordinate bug" was actually an **OCR text matching bug** (matched "Deep Scan" instead of "Scan" button)
