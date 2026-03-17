@@ -88,7 +88,6 @@ User: "Send a message to John"
     │ App in memory?├──No─▶  ui_detector.py       │
     └───┬───────────┘     │  ├ GPA-GUI-Detector   │
         │ Yes             │  ├ Apple Vision OCR    │
-        ▼                 │  └ Accessibility API   │
     ┌────────────┐        └───────────┬───────────┘
     │ Template   │                    │
     │ Match 0.3s │          Save to memory
@@ -128,7 +127,6 @@ User: "Send a message to John"
 |----------|-------|---------------|----------------|
 | **[GPA-GUI-Detector](https://huggingface.co/Salesforce/GPA-GUI-Detector)** | 0.3s | Icons, buttons | Finds gray-on-gray icons others miss |
 | **Apple Vision OCR** | 1.6s | Text (CN + EN) | Best Chinese OCR available |
-| **Accessibility API** | 0.1s | Dock, menus | Perfect accuracy, zero cost |
 | **Template Match** | 0.3s | Anything seen before | 100% accuracy after first learn |
 
 ### App Visual Memory

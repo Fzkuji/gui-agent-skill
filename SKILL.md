@@ -16,10 +16,9 @@ User Intent ("click Connect button in GlobalProtect")
 ┌─────────────────────────────────────┐
 │  1. LOCATE ELEMENT                  │
 │     Try in order:                   │
-│     ① AX API (instant, preferred)   │  → named buttons, controls
-│     ② Template Match (0.3s)         │  → known components from memory
-│     ③ OCR text search (1.6s)        │  → find by visible text
-│     ④ YOLO detection (0.3s)         │  → icons in AX-poor apps only
+│     ① Template Match (0.3s)         │  → known components from memory
+│     ② OCR text search (1.6s)        │  → find by visible text
+│     ③ YOLO detection (0.3s)         │  → icons in AX-poor apps only
 └─────────────────────────────────────┘
     │
     ▼
@@ -46,7 +45,6 @@ User Intent ("click Connect button in GlobalProtect")
 |----------|--------------|-------|----------|
 | **GPA-GUI-Detector** | Icons, buttons, UI elements | 0.3s | WeChat icons, any app's buttons |
 | **Apple Vision OCR** | Text (Chinese + English) | 1.6s | Chat content, labels, menus |
-| **Accessibility API** | Named controls with positions | 0.1s | Dock, Discord, Chrome, menubar |
 | **Template Match** | Previously seen components | 0.3s | Known UI elements (conf=1.0) |
 
 ### When to use what — Decision Tree
@@ -54,35 +52,31 @@ User Intent ("click Connect button in GlobalProtect")
 **ALWAYS try methods in this order (cheapest first):**
 
 ```
-Step 1: Can AX API find the element?
   → osascript: tell process "AppName" to get UI elements
   → If found (has name + position) → USE IT. Done.
-  → AX works well for: Dock, menubar, Discord, Chrome, 
     System Settings, GlobalProtect, most native apps
 
 Step 2: Is the element in template memory?
   → app_memory.py find --app AppName --component name
   → If matched (conf > 0.8) → click it. Done.
 
-Step 3: Can OCR find it by text?
+Step 2: Can OCR find it by text?
   → ocr_find("button text") within window bounds
   → If found → click. Optionally auto-learn template.
 
-Step 4: Run full detection (YOLO + OCR)
+Step 3: Run full detection (YOLO + OCR)
   → ui_detector.py --app AppName
   → GPA-GUI-Detector finds icons/buttons
   → Apple Vision OCR finds text
   → Merge, save to memory for next time
 
-Step 5: Last resort — screenshot + ask LLM
+Step 4: Last resort — screenshot + ask LLM
   → Take screenshot, send to vision model for analysis
   → Only if all above methods fail
 ```
 
-**Do NOT skip to Step 4 if Step 1 works.** AX is free, instant, and 100% accurate.
 GlobalProtect VPN reconnect uses only AX + cliclick — no YOLO needed.
 
-### AX API Quick Reference
 
 ```bash
 # List all UI elements of an app
@@ -94,10 +88,8 @@ osascript -l JavaScript -e '
 '
 
 # Click a named button
-osascript -e 'tell application "System Events" to tell process "AppName" to click button "Connect" of window 1'
 
 # Get element position
-osascript -e 'tell application "System Events" to tell process "AppName" to return position of button "Connect" of window 1'
 ```
 
 ### When YOLO detection IS needed

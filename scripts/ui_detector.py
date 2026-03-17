@@ -416,7 +416,7 @@ def annotate_image(img_path, elements, out_path=None, retina_scale=2):
 # Main detection pipeline
 # ═══════════════════════════════════════════
 
-def detect_all(app_name=None, fullscreen=False, include_ax=True,
+def detect_all(app_name=None, fullscreen=False, include_ax=False,
                yolo_conf=0.1, yolo_iou=0.3, merge_iou=0.3):
     """Run full detection pipeline.
 

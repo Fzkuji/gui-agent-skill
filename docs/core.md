@@ -4,7 +4,6 @@
 
 | Tool | Speed | Use for |
 |------|-------|---------|
-| **AX API** | ~0.1s | Dock, menubar, Discord/Chrome elements (name + position) |
 | **Template match** | ~0.3s | Known UI elements from memory (conf=1.0) |
 | **cliclick** | instant | Mouse clicks (`c:x,y`), keys (`kp:return`) |
 | **Apple Vision OCR** | ~1.6s | Find text on screen (Chinese + English) |
@@ -67,7 +66,6 @@ Screen (0,0) ──────────────────────�
 ### Remote Server Management (JupyterLab)
 - **nvitop** is usually already running in one of the terminal tabs — don't create new notebooks/terminals unnecessarily, look for existing ones first
 - JupyterLab has multiple terminal tabs — check ALL tabs before creating new ones
-- `user@server` tabs are SSH terminals, not CodeBuddy — CodeBuddy tabs show `Terminal N`
 - To run shell commands in Jupyter Notebook: prefix with `!` (e.g., `!nvidia-smi`)
 - IME interferes with `!` prefix — use pbcopy paste instead of typing
 
@@ -94,7 +92,6 @@ Screen (0,0) ──────────────────────�
 - **Memory is per-machine** — gitignored, each machine learns its own UI
 - **NEVER commit memory/, detected/, templates/ to git** — contains personal screenshots, chat content, contact names. If accidentally committed, use `git filter-branch` to purge from ALL history, then force push
 
-## App Accessibility Support
 
 | App | AX Elements | Framework | Notes |
 |-----|-------------|-----------|-------|
