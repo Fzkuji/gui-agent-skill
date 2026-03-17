@@ -226,6 +226,59 @@ def get_window_bounds(app_name):
 # Actions
 # ═══════════════════════════════════════════
 
+def wait_for_element(app_name, target, max_wait=30, interval=2):
+    """Event-driven wait: poll until target element appears.
+
+    target can be:
+    - component name (template match)
+    - text string (OCR search)
+
+    Returns: (found, x, y) or (False, 0, 0) on timeout
+    """
+    import cv2
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+    for i in range(max_wait // interval):
+        # Screenshot
+        subprocess.run(["/usr/sbin/screencapture", "-x", "/tmp/_wait.png"],
+                       capture_output=True, timeout=5)
+        subprocess.run(["sips", "-z", "982", "1512", "/tmp/_wait.png",
+                        "--out", "/tmp/_wait_s.png"],
+                       capture_output=True, timeout=5)
+
+        # Try template match first
+        try:
+            from app_memory import match_component
+            img = cv2.imread("/tmp/_wait_s.png")
+            found, rx, ry, conf = match_component(app_name, target, img)
+            if found and conf > 0.7:
+                return True, rx, ry
+        except:
+            pass
+
+        # Try OCR
+        try:
+            from gui_agent import ocr_find
+            matches = ocr_find(target, img_path="/tmp/_wait_s.png")
+            if matches:
+                return True, matches[0]["cx"], matches[0]["cy"]
+        except:
+            pass
+
+        time.sleep(interval)
+
+    return False, 0, 0
+
+
+def click_and_wait(x, y, app_name, next_target, max_wait=30):
+    """Click at (x,y) then wait for next_target to appear.
+
+    Returns: (found, next_x, next_y)
+    """
+    subprocess.run(["/opt/homebrew/bin/cliclick", f"c:{x},{y}"], check=True)
+    return wait_for_element(app_name, next_target, max_wait=max_wait)
+
+
 def action_send_message(app_name, contact, message):
     """Send a message in a chat app."""
     app_name = resolve_app_name(app_name)

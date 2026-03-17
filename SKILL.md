@@ -47,6 +47,30 @@ User Intent ("click Connect button in GlobalProtect")
 | **Apple Vision OCR** | Text (Chinese + English) | 1.6s | Chat content, labels, menus |
 | **Template Match** | Previously seen components | 0.3s | Known UI elements (conf=1.0) |
 
+### Core Principles
+
+**1. UI Positions Are Stable**
+If the user hasn't changed their setup, UI element positions don't change between sessions.
+Template matching a learned icon gives the same result every time.
+No need to re-detect or re-learn unless the app updates or window resizes.
+Learn once → match forever → click instantly.
+
+**2. Event-Driven, Not Sleep-Based**
+NEVER use fixed sleep() to wait. Use short polling:
+- Screenshot every 1-2 seconds
+- Template match or OCR check for expected target
+- Target appears → proceed immediately
+- Timeout after 30 seconds max
+
+**3. Template Match First, Always**
+If an icon is in memory, use template match (0.3s).
+Do NOT run YOLO or full OCR for known components.
+Only fall back to detection for unknown/new elements.
+
+**4. Window-Only Screenshots**
+Always capture the target window only (screencapture -l <windowID>).
+Never use fullscreen screenshots for detection — too slow, causes cross-app confusion.
+
 ### When to use what — Decision Tree
 
 **ALWAYS try methods in this order:**
