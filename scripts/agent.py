@@ -1081,22 +1081,25 @@ def action_open_app(app_name):
 
 
 def action_navigate_browser(url):
-    """Navigate browser to URL — opens in current window's active tab or new tab."""
-    # Use AppleScript to navigate in the existing Chrome window (same profile).
-    # `open -a Chrome <url>` may open a new/incognito window depending on profile config.
-    script = f'''
-    tell application "Google Chrome"
-        activate
-        if (count of windows) > 0 then
-            set URL of active tab of first window to "{url}"
-        else
-            make new window
-            set URL of active tab of first window to "{url}"
-        end if
-    end tell
-    '''
-    subprocess.run(["osascript", "-e", script], capture_output=True, timeout=10)
+    """Navigate browser to URL — visually: activate Chrome, click address bar, paste URL, Enter."""
+    app_name = "Google Chrome"
+    activate_app(app_name)
+    time.sleep(0.5)
+
+    # Cmd+L to focus address bar (works in all browsers)
+    subprocess.run(["/opt/homebrew/bin/cliclick", "kp:command-l"], capture_output=True, timeout=5)
+    time.sleep(0.3)
+
+    # Paste URL into address bar
+    subprocess.run(["bash", "-c", f'echo -n "{url}" | LANG=en_US.UTF-8 pbcopy'], capture_output=True, timeout=5)
+    time.sleep(0.1)
+    subprocess.run(["/opt/homebrew/bin/cliclick", "kp:command-v"], capture_output=True, timeout=5)
+    time.sleep(0.3)
+
+    # Press Enter to navigate
+    subprocess.run(["/opt/homebrew/bin/cliclick", "kp:return"], capture_output=True, timeout=5)
     time.sleep(3)
+
     print(f"  🌐 Navigated to {url}")
     return True
 
