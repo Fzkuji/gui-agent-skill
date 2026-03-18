@@ -182,20 +182,9 @@ Then just chat with your agent — it reads `SKILL.md` and handles everything au
 
 ## 🧠 How It Works
 
-```mermaid
-flowchart TD
-    User["🗣️ User Request"] --> Intent["🎯 Intent Match · Find saved workflow"]
-    Intent --> Observe["👁️ Observe · Screenshot + YOLO + OCR"]
-    Observe --> Memory{"In memory?"}
-    Memory -- Yes --> Template["⚡ Template Match ~0.3s"]
-    Memory -- No --> Detect["🔍 Detect & Learn → Save"]
-    Detect --> Verify
-    Template --> Verify["✓ Verify · Correct element & window"]
-    Verify --> Act["🖱️ Act · Click / Type / Send"]
-    Act --> Changed{"State changed?"}
-    Changed -- Yes --> Report["📊 Report · Time + Tokens + Actions"]
-    Changed -- No --> Observe
-```
+<p align="center">
+  <img src="assets/pipeline.svg" alt="GUIClaw Pipeline" width="600" />
+</p>
 
 ### Learn Once, Match Forever
 

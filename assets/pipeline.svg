@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 920" width="600" height="920" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.08"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#86efac"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#fca5a5"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="600" height="920" rx="12" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="300" y="36" text-anchor="middle" font-size="16" font-weight="600" fill="#334155">GUIClaw Pipeline</text>
+  <text x="300" y="54" text-anchor="middle" font-size="10" fill="#94a3b8">Visual Memory-Driven GUI Automation</text>
+
+  <!-- 1. Intent Match (purple) -->
+  <rect x="175" y="72" width="250" height="56" rx="10" fill="#f3e8ff" stroke="#d8b4fe" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="300" y="96" text-anchor="middle" font-size="13" font-weight="600" fill="#7c3aed">🎯 Intent Match</text>
+  <text x="300" y="114" text-anchor="middle" font-size="10" fill="#8b5cf6">Find saved workflow · LLM semantic match</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="300" y1="128" x2="300" y2="148" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 2. Observe (blue) -->
+  <rect x="175" y="152" width="250" height="56" rx="10" fill="#e0f2fe" stroke="#93c5fd" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="300" y="176" text-anchor="middle" font-size="13" font-weight="600" fill="#2563eb">👁️ Observe</text>
+  <text x="300" y="194" text-anchor="middle" font-size="10" fill="#3b82f6">Screenshot · YOLO + OCR · Identify state</text>
+
+  <!-- Arrow 2→diamond1 -->
+  <line x1="300" y1="208" x2="300" y2="238" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 3. Diamond: In memory? -->
+  <polygon points="300,242 370,277 300,312 230,277" fill="#fefce8" stroke="#fde68a" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="300" y="274" text-anchor="middle" font-size="11" font-weight="600" fill="#a16207">In memory?</text>
+  <text x="300" y="288" text-anchor="middle" font-size="9" fill="#ca8a04">cached UI data</text>
+
+  <!-- Yes branch (left) → Template Match -->
+  <line x1="230" y1="277" x2="140" y2="277" stroke="#86efac" stroke-width="1.5"/>
+  <line x1="140" y1="277" x2="140" y2="330" stroke="#86efac" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <text x="182" y="270" text-anchor="middle" font-size="10" font-weight="600" fill="#16a34a">Yes</text>
+
+  <!-- Template Match (green) -->
+  <rect x="50" y="334" width="180" height="50" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="140" y="355" text-anchor="middle" font-size="12" font-weight="600" fill="#16a34a">⚡ Template Match</text>
+  <text x="140" y="371" text-anchor="middle" font-size="9" fill="#22c55e">~0.3s · Known components</text>
+
+  <!-- No branch (right) → Detect & Learn -->
+  <line x1="370" y1="277" x2="460" y2="277" stroke="#fdba74" stroke-width="1.5"/>
+  <line x1="460" y1="277" x2="460" y2="330" stroke="#fdba74" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="418" y="270" text-anchor="middle" font-size="10" font-weight="600" fill="#ea580c">No</text>
+
+  <!-- Detect & Learn (orange) -->
+  <rect x="370" y="334" width="180" height="50" rx="10" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="460" y="355" text-anchor="middle" font-size="12" font-weight="600" fill="#ea580c">🔍 Detect &amp; Learn</text>
+  <text x="460" y="371" text-anchor="middle" font-size="9" fill="#f97316">YOLO + OCR · Save to memory</text>
+
+  <!-- Merge lines down to Verify -->
+  <line x1="140" y1="384" x2="140" y2="420" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="460" y1="384" x2="460" y2="420" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="140" y1="420" x2="460" y2="420" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="300" y1="420" x2="300" y2="440" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 4. Verify (green) -->
+  <rect x="175" y="444" width="250" height="56" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="300" y="468" text-anchor="middle" font-size="13" font-weight="600" fill="#16a34a">✓ Verify</text>
+  <text x="300" y="486" text-anchor="middle" font-size="10" fill="#22c55e">Correct element? · Correct window?</text>
+
+  <!-- Arrow 4→5 -->
+  <line x1="300" y1="500" x2="300" y2="524" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 5. Act (red/pink) -->
+  <rect x="175" y="528" width="250" height="56" rx="10" fill="#ffe4e6" stroke="#fca5a5" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="300" y="552" text-anchor="middle" font-size="13" font-weight="600" fill="#dc2626">🖱️ Act</text>
+  <text x="300" y="570" text-anchor="middle" font-size="10" fill="#ef4444">Click · Type · Send</text>
+
+  <!-- Arrow 5→diamond2 -->
+  <line x1="300" y1="584" x2="300" y2="614" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 6. Diamond: State changed? -->
+  <polygon points="300,618 380,658 300,698 220,658" fill="#fefce8" stroke="#fde68a" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="300" y="653" text-anchor="middle" font-size="11" font-weight="600" fill="#a16207">State</text>
+  <text x="300" y="668" text-anchor="middle" font-size="11" font-weight="600" fill="#a16207">changed?</text>
+
+  <!-- Yes → Report -->
+  <line x1="300" y1="698" x2="300" y2="728" stroke="#86efac" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <text x="314" y="718" font-size="10" font-weight="600" fill="#16a34a">Yes</text>
+
+  <!-- Report (green) -->
+  <rect x="175" y="732" width="250" height="56" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="300" y="756" text-anchor="middle" font-size="13" font-weight="600" fill="#16a34a">📊 Report</text>
+  <text x="300" y="774" text-anchor="middle" font-size="10" fill="#22c55e">Time · Token delta · Action count</text>
+
+  <!-- Done indicator -->
+  <circle cx="300" cy="816" r="14" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>
+  <text x="300" y="820" text-anchor="middle" font-size="11" font-weight="700" fill="#16a34a">✓</text>
+  <line x1="300" y1="788" x2="300" y2="800" stroke="#86efac" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+  <!-- No → loop back to Observe -->
+  <line x1="380" y1="658" x2="540" y2="658" stroke="#fca5a5" stroke-width="1.5"/>
+  <text x="408" y="650" font-size="10" font-weight="600" fill="#dc2626">No</text>
+  <line x1="540" y1="658" x2="540" y2="180" stroke="#fca5a5" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <line x1="540" y1="180" x2="430" y2="180" stroke="#fca5a5" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow-red)"/>
+  <text x="540" y="420" text-anchor="middle" font-size="9" fill="#f87171" transform="rotate(-90, 552, 420)">retry loop</text>
+
+  <!-- Footer -->
+  <text x="300" y="860" text-anchor="middle" font-size="9" fill="#cbd5e1">GUIClaw · Visual Memory-Driven GUI Automation for macOS</text>
+</svg>

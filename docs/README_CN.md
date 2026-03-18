@@ -162,20 +162,9 @@ bash scripts/setup.sh
 
 ## 🧠 工作原理
 
-```mermaid
-flowchart TD
-    User["🗣️ 用户请求"] --> Intent["🎯 意图匹配 · 查找已有工作流"]
-    Intent --> Observe["👁️ 观察 · 截屏 + YOLO + OCR"]
-    Observe --> Memory{"在记忆中？"}
-    Memory -- 是 --> Template["⚡ 模板匹配 ~0.3 秒"]
-    Memory -- 否 --> Detect["🔍 检测并学习 → 保存"]
-    Detect --> Verify
-    Template --> Verify["✓ 验证 · 正确元素与窗口"]
-    Verify --> Act["🖱️ 执行 · 点击 / 输入 / 发送"]
-    Act --> Changed{"状态变化？"}
-    Changed -- 是 --> Report["📊 报告 · 耗时 + Token + 操作"]
-    Changed -- 否 --> Observe
-```
+<p align="center">
+  <img src="../assets/pipeline.svg" alt="GUIClaw 流程图" width="600" />
+</p>
 
 ### 一次学习，永久匹配
 
