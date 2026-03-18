@@ -269,14 +269,15 @@ python3 scripts/agent.py read_screen --app WeChat
 
 **agent.py automatically handles:**
 - App not learned yet? → runs `learn` first
-- App learned before? → runs `revise` (check if memory still matches current screen)
+- App learned before? → runs `eval` (check if memory still matches current screen)
   - Match rate ≥ 80% + all needed components found → use existing memory, skip learn
   - Match rate < 80% or components missing → incremental learn (update memory)
 - App name in Chinese? → resolves alias (微信→WeChat, 浏览器→Chrome)
 - Activates the app window before operating
 - Calls the right underlying script (app_memory / gui_agent / ui_detector)
+- **Workflow conflict detected?** → runs `replan_workflow` (learn fresh + analyze + replan)
 
-### Revise Logic (Workflow-Based)
+### Eval Logic (Workflow-Based)
 
 ```
 agent.py gets a task → ensure_app_ready(app, workflow, required_components)
@@ -371,16 +372,21 @@ DO NOT blindly replay all steps from memory. INSTEAD:
 3. Skip steps already done (e.g., scan finished -> skip to Run)
 4. Execute ONLY the next needed step
 5. After each step: verify state changed, then next step
-6. If state does not match any known step: STOP and explore
+6. If state does not match any known step: STOP and trigger replan (learn + analyze)
 
-### Explore (when state is unclear)
+### Explore (Manual Trigger)
 
-When you are not sure what state the app is in:
-1. Crop the target window from screenshot
-2. Use vision model to LOOK at it and describe what you see
-3. Identify: what page, what buttons, what state
-4. THEN decide what to do
-5. This is NOT optional when unsure
+**When to use:** When you want to analyze/familiarize with an app WITHOUT a specific goal.
+
+**How:** User manually triggers `agent.py explore --app AppName`
+
+**What it does:**
+1. Screenshot the target window
+2. Run YOLO + OCR detection
+3. Save to memory for future reference
+4. Agent analyzes the UI structure
+
+**NOT for:** Workflow execution (use eval/replan for that)
 
 ## Auto-Learn Rule (MUST follow)
 
