@@ -162,9 +162,20 @@ bash scripts/setup.sh
 
 ## 🧠 工作原理
 
-<p align="center">
-  <img src="../assets/pipeline.png" alt="GUIClaw 流程图" width="600" />
-</p>
+```mermaid
+flowchart TD
+    User["🗣️ 用户请求"] --> Intent["🎯 意图匹配\n查找已有工作流 · LLM 语义匹配"]
+    Intent --> Observe["👁️ 观察\n截屏 · YOLO + OCR · 识别状态"]
+    Observe --> Memory{"在记忆中？"}
+    Memory -- "是" --> Template["⚡ 模板匹配\n~0.3 秒 · 已知组件"]
+    Memory -- "否" --> Detect["🔍 检测并学习\nYOLO + OCR · 保存到记忆"]
+    Detect --> Verify
+    Template --> Verify["✓ 验证\n正确元素？ · 正确窗口？"]
+    Verify --> Act["🖱️ 执行\n点击 · 输入 · 发送 · 更新状态"]
+    Act --> Changed{"状态变化？"}
+    Changed -- "是" --> Report["📊 报告\n耗时 · Token 增量 · 操作统计"]
+    Changed -- "否" --> Observe
+```
 
 ### 一次学习，永久匹配
 
