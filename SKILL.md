@@ -21,7 +21,6 @@ Each step has detailed instructions in its own skill file:
 | **Learn** | `skills/gui-learn/SKILL.md` | App not in memory, or match rate < 80% |
 | **Act** | `skills/gui-act/SKILL.md` | Clicking, typing, sending messages, waiting for UI |
 | **Workflow** | `skills/gui-workflow/SKILL.md` | Intent matching, saving/replaying workflows, meta-workflows |
-| **Browser** | `skills/gui-browser/SKILL.md` | Operating browsers — two-layer memory, navigation, per-site learning |
 | **Setup** | `skills/gui-setup/SKILL.md` | First-time setup on a new machine |
 
 Read the relevant sub-skill when you reach that step. You don't need to read all of them upfront.
@@ -184,7 +183,6 @@ gui-agent/
 │   ├── gui-learn/SKILL.md
 │   ├── gui-act/SKILL.md
 │   ├── gui-workflow/SKILL.md
-│   ├── gui-browser/SKILL.md
 │   └── gui-setup/SKILL.md
 ├── scripts/              # Core scripts
 │   ├── agent.py, ui_detector.py, app_memory.py, gui_agent.py, template_match.py

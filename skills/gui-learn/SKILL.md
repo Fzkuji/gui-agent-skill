@@ -99,3 +99,17 @@ Task arrives → ensure_app_ready(app, workflow)
         ├── ≥ 80% → proceed
         └── < 80% → incremental learn
 ```
+
+## Browser Per-Site Memory
+
+Browsers have two layers — the app chrome (tabs, address bar) is fixed, but each website has different content. Learn them separately:
+
+```
+memory/apps/google_chrome/
+├── profile.json, components/   # Browser chrome (learn once)
+└── sites/<domain>/             # Per-website memory
+    ├── profile.json, components/, pages/
+```
+
+**Save per site**: nav bars, menus, search boxes, filter controls, login buttons, logos
+**Don't save**: search results, article content, prices, ads, user-generated content

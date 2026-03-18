@@ -93,3 +93,10 @@ python3 scripts/agent.py wait_for --app AppName --component ComponentName
 2. Did the expected change happen?
 3. Am I in the expected next state?
 4. If NOT → re-observe and decide
+
+## Web Form Input Quirks
+
+- **Autocomplete fields** (e.g., station selectors): typing alone is NOT enough — must click the dropdown suggestion
+- **Chinese input in web forms**: System IME interferes with autocomplete. Switch to English, type pinyin, let website autocomplete handle it
+- **Cmd+V in web forms**: May garble text. Use `cliclick t:text` for ASCII/pinyin
+- **Date pickers**: Usually need calendar UI clicks, not typed dates
