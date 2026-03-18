@@ -479,6 +479,15 @@ def save_meta_workflow(workflow_name, steps, description=None, notes=None):
         description: one-line summary, max 30 words
         notes: lessons learned
     """
+    # Validate: all steps must be 'call' actions
+    for i, step in enumerate(steps):
+        if step.get("action") != "call":
+            print(f"❌ Step {i}: action='{step.get('action')}' — meta-workflows only allow 'call' actions")
+            return
+        if not step.get("workflow"):
+            print(f"❌ Step {i}: missing 'workflow' field — each call must reference a workflow")
+            return
+    
     meta_dir = MEMORY_DIR.parent / "meta_workflows"
     meta_dir.mkdir(parents=True, exist_ok=True)
     
