@@ -62,11 +62,11 @@
   <line x1="462" y1="105" x2="470" y2="105" stroke="#378ADD" stroke-width="1.2" marker-end="url(#arrow-sm)"/>
   <line x1="548" y1="105" x2="556" y2="105" stroke="#378ADD" stroke-width="1.2" marker-end="url(#arrow-sm)"/>
 
-  <!-- Feedback loop: verify back to observe -->
-  <path d="M423 85 L423 70 L165 70 L165 85" fill="none" stroke="#378ADD" stroke-width="0.8" stroke-dasharray="4 3" marker-end="url(#arrow-sm)"/>
-  <text x="294" y="66" text-anchor="middle" font-size="9" fill="#378ADD">retry loop</text>
+  <!-- (removed: retry loop arrow) -->
 
-  <!-- (removed: agent.py orchestrator bar) -->
+  <!-- agent.py orchestrator label below pipeline -->
+  <rect x="40" y="134" width="594" height="18" rx="4" fill="#042C53" opacity="0.06"/>
+  <text x="337" y="147" text-anchor="middle" font-size="9" font-weight="600" fill="#042C53" letter-spacing="0.07em">agent.py — orchestrates all steps</text>
 
   <!-- ???????????????????????????????????????????????
        SECTION 2: SUB-SKILLS  (middle, 5 columns)
