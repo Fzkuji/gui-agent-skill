@@ -187,6 +187,13 @@ User: "Clean my Mac"
          │
          ▼
 ┌─────────────────────────────────┐
+│ -1. INTENT MATCH                │ Find saved workflows → LLM semantic match
+│     • List workflows for app    │
+│     • Match by description      │
+│     • Found? → Load steps       │
+└────────┬────────────────────────┘
+         ▼
+┌─────────────────────────────────┐
 │ 0. OBSERVE                      │ Screenshot → YOLO + OCR → What app? Identify state
 │    • YOLO detect icons/buttons  │
 │    • OCR visible text           │
