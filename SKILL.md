@@ -356,14 +356,15 @@ These exist because of real bugs. Each rule has a reason.
 
 ## Key Principles
 
-1. **Memory first, detect second** — template match before YOLO+OCR
-2. **Template > OCR > YOLO > LLM** — cheapest method first
-3. **Relative coordinates** — all positions relative to window top-left, never hardcode screen positions
-4. **Window-based, not screen-based** — capture and operate within target window only (`screencapture -l <windowID>`)
-5. **Paste > Type** for CJK text and special chars (`LANG=en_US.UTF-8 pbcopy` + Cmd+V)
-6. **Learn incrementally** — save new components to memory after each interaction
-7. **Integer coordinates only** — cliclick requires integers
-8. **Learn once, match forever** — UI positions are stable; no need to re-detect unless app updates
+1. **Vision-driven, no shortcuts** — every GUI interaction goes through the visual pipeline (screenshot → detect → match → click). Do not use system commands (`open`, `osascript tell app to set URL`, CLI tools) to manipulate app state. The only allowed system calls are: `activate` (bring window to front), `screencapture` (take screenshot), and `cliclick` (execute click/type after visual detection provides coordinates).
+2. **Memory first, detect second** — template match before YOLO+OCR
+3. **Template > OCR > YOLO > LLM** — cheapest method first
+4. **Relative coordinates** — all positions relative to window top-left, never hardcode screen positions
+5. **Window-based, not screen-based** — capture and operate within target window only (`screencapture -l <windowID>`)
+6. **Paste > Type** for CJK text and special chars (`LANG=en_US.UTF-8 pbcopy` + Cmd+V)
+7. **Learn incrementally** — save new components to memory after each interaction
+8. **Integer coordinates only** — cliclick requires integers
+9. **Learn once, match forever** — UI positions are stable; no need to re-detect unless app updates
 
 ---
 
