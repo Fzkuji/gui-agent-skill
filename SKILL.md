@@ -17,12 +17,12 @@ Each step has detailed instructions in its own skill file:
 
 | Step | Skill | When to read |
 |------|-------|-------------|
-| **Observe** | `skills/observe/SKILL.md` | Before any action — screenshot, OCR, identify state |
-| **Learn** | `skills/learn/SKILL.md` | App not in memory, or match rate < 80% |
-| **Act** | `skills/act/SKILL.md` | Clicking, typing, sending messages, waiting for UI |
-| **Workflow** | `skills/workflow/SKILL.md` | Intent matching, saving/replaying workflows, meta-workflows |
-| **Browser** | `skills/browser/SKILL.md` | Operating browsers — two-layer memory, navigation, per-site learning |
-| **Setup** | `skills/setup/SKILL.md` | First-time setup on a new machine |
+| **Observe** | `skills/gui-observe/SKILL.md` | Before any action — screenshot, OCR, identify state |
+| **Learn** | `skills/gui-learn/SKILL.md` | App not in memory, or match rate < 80% |
+| **Act** | `skills/gui-act/SKILL.md` | Clicking, typing, sending messages, waiting for UI |
+| **Workflow** | `skills/gui-workflow/SKILL.md` | Intent matching, saving/replaying workflows, meta-workflows |
+| **Browser** | `skills/gui-browser/SKILL.md` | Operating browsers — two-layer memory, navigation, per-site learning |
+| **Setup** | `skills/gui-setup/SKILL.md` | First-time setup on a new machine |
 
 Read the relevant sub-skill when you reach that step. You don't need to read all of them upfront.
 
@@ -60,37 +60,37 @@ agent.py automatically handles:
 ## Execution Flow
 
 ### STEP -1: INTENT MATCHING
-→ Details: `skills/workflow/SKILL.md`
+→ Details: `skills/gui-workflow/SKILL.md`
 
 Match user request to saved workflows before doing anything. If matched, use workflow steps as plan. If not, proceed and save after success.
 
 ### STEP 0: OBSERVE
-→ Details: `skills/observe/SKILL.md`
+→ Details: `skills/gui-observe/SKILL.md`
 
 Screenshot, identify current state. Record `session_status` for token reporting.
 
 ### STEP 1: ENSURE APP READY
-→ Details: `skills/learn/SKILL.md`
+→ Details: `skills/gui-learn/SKILL.md`
 
 Check if app is in memory. If not → learn. If match rate < 80% → re-learn. This is YOUR responsibility — do not wait for the user.
 
 ### STEP 2: LEARN (when needed)
-→ Details: `skills/learn/SKILL.md`
+→ Details: `skills/gui-learn/SKILL.md`
 
 Detect all components (YOLO + OCR), identify them, filter, save to memory. Privacy check: delete personal info.
 
 ### STEP 3: ACT
-→ Details: `skills/act/SKILL.md`
+→ Details: `skills/gui-act/SKILL.md`
 
 Execute clicks, typing, sending. Pre-verify before every click. Pre-verify contact before every message send.
 
 ### STEP 4: POST-ACTION VERIFY
-→ Details: `skills/act/SKILL.md`
+→ Details: `skills/gui-act/SKILL.md`
 
 Screenshot after every action. Did the expected change happen? If not → re-observe.
 
 ### STEP 5: SAVE WORKFLOW
-→ Details: `skills/workflow/SKILL.md`
+→ Details: `skills/gui-workflow/SKILL.md`
 
 Save successful multi-step sequences for future replay.
 
@@ -180,12 +180,12 @@ memory/meta_workflows/  # Cross-app orchestration
 gui-agent/
 ├── SKILL.md              # This file (main orchestrator)
 ├── skills/               # Sub-skills (read on demand)
-│   ├── observe/SKILL.md
-│   ├── learn/SKILL.md
-│   ├── act/SKILL.md
-│   ├── workflow/SKILL.md
-│   ├── browser/SKILL.md
-│   └── setup/SKILL.md
+│   ├── gui-observe/SKILL.md
+│   ├── gui-learn/SKILL.md
+│   ├── gui-act/SKILL.md
+│   ├── gui-workflow/SKILL.md
+│   ├── gui-browser/SKILL.md
+│   └── gui-setup/SKILL.md
 ├── scripts/              # Core scripts
 │   ├── agent.py, ui_detector.py, app_memory.py, gui_agent.py, template_match.py
 ├── memory/               # Visual memory (gitignored)
