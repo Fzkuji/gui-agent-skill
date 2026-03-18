@@ -236,22 +236,14 @@ def detect_workflow_conflict(app_name, expected_state, actual_state):
 def plan_workflow(app_name, context=None, error_info=None):
     """Analyze and create a workflow plan.
 
-    If error_info is provided, will re-learn first (re-plan on error).
+    If error_info is provided, analyze why it failed and create new plan.
     
     Returns: (plan, analysis)
     """
     reason = "after error" if error_info else "after learn"
     print(f"  📝 Planning {app_name} ({reason})...")
 
-    # If error provided, re-learn first
-    if error_info:
-        page = context.get("workflow", "main") if context else "main"
-        out, code = run_script("app_memory.py", ["learn", "--app", app_name, "--page", page], timeout=30)
-        if code != 0:
-            return None, f"Failed to learn: {out}"
-        print(f"  🔄 Re-learned {app_name}")
-
-    # Load profile
+    # Load profile (already learned)
     app_dir = SKILL_DIR / "memory" / "apps" / app_name.lower().replace(" ", "_")
     profile_path = app_dir / "profile.json"
 
