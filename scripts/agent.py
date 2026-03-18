@@ -1102,7 +1102,14 @@ def action_navigate_browser(url):
         capture_output=True, timeout=5)
     time.sleep(0.3)
 
-    # Press Enter to navigate
+    # Dismiss autocomplete dropdown, re-select URL, then Enter
+    subprocess.run(["/opt/homebrew/bin/cliclick", "kp:esc"],
+        capture_output=True, timeout=5)
+    time.sleep(0.2)
+    subprocess.run(["osascript", "-e",
+        'tell application "System Events" to keystroke "l" using command down'],
+        capture_output=True, timeout=5)
+    time.sleep(0.2)
     subprocess.run(["/opt/homebrew/bin/cliclick", "kp:return"],
         capture_output=True, timeout=5)
     time.sleep(3)
