@@ -27,6 +27,7 @@
 
 ## 🔥 News
 
+- **[03/19/2026]** v0.4.0 — **Workflow memory + async polling**: Saved workflows auto-matched by LLM intent; `wait_for` command (template-match polling, no blind clicks); mandatory timing & token delta reporting; multi-window fix (selects largest window).
 - **[03/19/2026]** v0.3.0 — **Click-graph state architecture**: UI modeled as a graph of states; each click creates a new state entry; state identification via OCR text matching. Removed pages/regions/overlays complexity.
 - **[03/17/2026]** v0.2.0 — Workflow-based revise, event-driven polling, mandatory operation protocol (observe→verify→act→confirm), per-app visual memory with auto-cleanup.
 - **[03/16/2026]** v0.1.0 — GPA-GUI-Detector integration, Apple Vision OCR, template matching, browser automation, per-site memory.
@@ -245,15 +246,25 @@ Each app gets its own visual memory with a **click-graph state model**.
 memory/apps/
 ├── wechat/
 │   ├── profile.json              # Components + click-graph states
-│   ├── components/
+│   ├── components/               # Cropped UI element images
 │   │   ├── search_bar.png
 │   │   ├── emoji_button.png
 │   │   └── ...
+│   ├── workflows/                # Saved task sequences
+│   │   └── send_message.json
 │   └── pages/
 │       └── main_annotated.jpg
 ├── cleanmymac_x/
 │   ├── profile.json
 │   ├── components/
+│   ├── workflows/
+│   │   └── smart_scan_cleanup.json
+│   └── pages/
+├── claude/
+│   ├── profile.json
+│   ├── components/
+│   ├── workflows/
+│   │   └── check_usage.json
 │   └── pages/
 └── google_chrome/
     ├── profile.json
@@ -310,22 +321,66 @@ The UI is modeled as a **graph of states**. Each state is defined by which compo
 - Handles overlays, popups, nested navigation naturally
 - Scales to complex apps with many UI states
 
+## 🔄 Workflow Memory
+
+Completed tasks are saved as reusable workflows. Next time a similar request comes in, the agent matches it semantically.
+
+```
+memory/apps/cleanmymac_x/workflows/smart_scan_cleanup.json
+memory/apps/claude/workflows/check_usage.json
+```
+
+**How matching works:**
+1. User says "帮我清理一下电脑" / "scan my Mac" / "run CleanMyMac"
+2. Agent lists saved workflows for the target app
+3. **LLM semantic matching** (not string matching) — the agent IS the LLM
+4. Match found → load workflow steps, observe current state, resume from correct step
+5. No match → operate normally, save new workflow after success
+
+**Example workflow** (`smart_scan_cleanup.json`):
+```json
+{
+  "steps": [
+    {"action": "open", "target": "CleanMyMac X"},
+    {"action": "observe", "note": "check current state"},
+    {"action": "click", "target": "Scan"},
+    {"action": "wait_for", "target": "Run", "timeout": 120},
+    {"action": "click", "target": "Run"},
+    {"action": "wait_for", "target": "Ignore", "timeout": 30},
+    {"action": "click", "target": "Ignore", "condition": "only if quit dialog appeared"}
+  ]
+}
+```
+
+**`wait_for` — async UI polling:**
+```bash
+python3 agent.py wait_for --app "CleanMyMac X" --component Run
+# ⏳ Waiting for 'Run' (timeout=120s, poll=10s)...
+# ✅ Found 'Run' at (855,802) conf=0.98 after 45.2s (5 polls)
+```
+- Template match every 10s (~0.3s per check)
+- On timeout → saves screenshot for inspection, **never blind-clicks**
+
 ## ⚠️ Safety & Protocol
 
 Every action follows a mandatory protocol — **written into the code, not just documentation**:
 
 | Step | What | Why |
 |------|------|-----|
-| **OBSERVE** | Screenshot + OCR before any action | Know what state you're in |
+| **INTENT** | Match request to saved workflows | Reuse proven paths |
+| **OBSERVE** | Screenshot + OCR + record token count | Know state, track cost |
 | **VERIFY** | Element exists? Correct window? Exact text match? | Prevent clicking wrong thing |
 | **ACT** | Click / type / send | Execute |
 | **CONFIRM** | Screenshot again, check state changed | Verify it worked |
+| **REPORT** | `⏱ 45s \| 📊 +10k tokens \| 🔧 3 clicks` | Mandatory cost tracking |
 
 **Safety rules enforced in code:**
 - ✅ Verify chat recipient before sending messages (OCR header)
 - ✅ Window-bounded operations (no clicking outside target app)
 - ✅ Exact text matching (prevents "Scan" matching "Deep Scan")
-- ✅ Largest-window detection (skips status bar panels)
+- ✅ Largest-window detection (skips status bar panels for multi-window apps)
+- ✅ No blind clicks after timeout — screenshot + inspect instead
+- ✅ Mandatory timing & token delta reporting after every task
 
 ## 🗂️ Project Structure
 
