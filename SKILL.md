@@ -88,7 +88,7 @@ After the full workflow completes:
 Use `gui-report` skill's tracker:
 
 1. **Task start**: `session_status` → note context size → `tracker.py start --task "..." --context X`
-2. **During task**: `tracker.py tick screenshots/clicks/learns/detects/image_calls` after each operation
+2. **During task**: clicks/screenshots/learns auto-tick via `app_memory.py`. Only `image_calls` needs manual tick.
 3. **Task end**: `session_status` → `tracker.py report --context X`
 
 Outputs duration, context delta, and operation counts. Use `tracker.py history` to review past tasks.

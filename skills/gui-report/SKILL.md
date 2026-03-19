@@ -22,11 +22,10 @@ TRACKER="python3 ~/.openclaw/workspace/skills/gui-agent/skills/gui-report/script
 # 1. Start tracking (get context size from session_status, e.g. "Context: 94k" → 94000)
 $TRACKER start --task "CleanMyMac cleanup" --context 94000
 
-# 2. During task — increment counters as you go
-$TRACKER tick screenshots
-$TRACKER tick clicks
-$TRACKER tick learns
+# 2. During task — clicks/screenshots/learns auto-tick via app_memory.py
+#    Only image_calls needs manual tick:
 $TRACKER tick image_calls
+#    Optional manual tick for anything else:
 $TRACKER tick clicks -n 3    # batch increment
 
 # 3. Optional notes

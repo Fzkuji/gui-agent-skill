@@ -46,6 +46,22 @@ SCRIPT_DIR = Path(__file__).parent
 SKILL_DIR = SCRIPT_DIR.parent
 MEMORY_DIR = SKILL_DIR / "memory" / "apps"
 
+# Tracker integration (auto-tick operations when tracker is active)
+_TRACKER_STATE = SKILL_DIR / "skills" / "gui-report" / "scripts" / ".tracker_state.json"
+
+def _tracker_tick(counter, n=1):
+    """Increment a tracker counter if tracker is active. No-op otherwise."""
+    try:
+        if not _TRACKER_STATE.exists():
+            return
+        with open(_TRACKER_STATE) as f:
+            state = json.load(f)
+        state[counter] = state.get(counter, 0) + n
+        with open(_TRACKER_STATE, "w") as f:
+            json.dump(state, f)
+    except Exception:
+        pass  # Never break main flow for tracking
+
 
 # ═══════════════════════════════════════════
 # Window utilities (relative coordinates)
@@ -987,6 +1003,8 @@ def learn_app(app_name, page_name=None):
         print(f"{'='*60}")
 
     print(f"  📁 {app_dir}")
+    _tracker_tick("learns")
+    _tracker_tick("screenshots")  # capture_window takes a screenshot
     return True
 
 
@@ -1452,6 +1470,7 @@ def click_and_record(app_name, label, x, y):
     # Pre-click: lightweight — template match only (no OCR), ~2s
     _sp.run(["screencapture", "-x", "/tmp/_click_rec.png"],
             capture_output=True, timeout=5)
+    _tracker_tick("screenshots")
     before_screen = _cv2.imread("/tmp/_click_rec.png")
     before_visible = _detect_visible_components(app_name, screen_img=before_screen)
     from_state, _ = identify_state_by_components(app_name, before_visible)
@@ -1471,6 +1490,7 @@ def click_and_record(app_name, label, x, y):
     time.sleep(0.3)
     _sp.run(["screencapture", "-x", "/tmp/_click_rec2.png"],
             capture_output=True, timeout=5)
+    _tracker_tick("screenshots")
     after_screen = _cv2.imread("/tmp/_click_rec2.png")
     after_visible = _detect_visible_components(app_name, screen_img=after_screen)
     
@@ -1522,6 +1542,9 @@ def click_and_record(app_name, label, x, y):
 
     print(f"  📊 State: {to_state_name} | {len(after_all)} items ({len(after_visible)} components + {len(after_texts)} texts)")
 
+    # Auto-tick tracker (no-op if tracker not running)
+    _tracker_tick("clicks")
+
     return True, f"Clicked '{label}' at ({x},{y})", after_visible
 
 
@@ -1558,6 +1581,7 @@ def click_component(app_name, component_name, verify=True):
     import cv2 as _cv2
     _sp.run(["screencapture", "-x", "/tmp/_click_screen.png"],
             capture_output=True, timeout=5)
+    _tracker_tick("screenshots")
     before_screen = _cv2.imread("/tmp/_click_screen.png")
     before_visible = _detect_visible_components(app_name, screen_img=before_screen)
 
@@ -1670,6 +1694,7 @@ def click_component(app_name, component_name, verify=True):
         else:
             print(f"  📋 Components: {', '.join(summary)}")
 
+    _tracker_tick("clicks")
     return True, f"Clicked '{component_name}' at ({screen_x},{screen_y}) conf={conf}"
 
 
