@@ -107,9 +107,12 @@ Compare `session_status` from STEP 0 vs now.
 ## Key Principles
 
 1. **Vision-driven, no shortcuts** — every GUI interaction goes through the visual pipeline (screenshot → detect → match → click). Do not use system commands (`open <url>`, `osascript tell app to set URL`, CLI tools) to manipulate app state. Only allowed: `activate` (bring window to front), `screencapture` (take screenshot), `platform_input.py` (click/type via pynput after visual detection provides coordinates). **Screenshot before AND after every click.**
-2. **Template match is the ONLY way to get click coordinates** — use `click_component` or `match_on_fullscreen` from `app_memory.py`. These match saved component images on full-screen screenshots and return precise screen coordinates.
-3. **NEVER use `image` tool to estimate coordinates** — the `image` tool (vision model) analyzes screenshots for understanding (what's on screen, what state, what happened). It does NOT provide reliable pixel coordinates. If you need to click something, it MUST have a saved template. If no template exists → learn the app first.
-4. **For dynamic content (search results, lists, popups)**: take screenshot → use `image` tool to UNDERSTAND what's there → crop the relevant region → use `image` tool on crop to identify exact position within crop → calculate screen coordinates from crop bounds. Or better: learn the dynamic state to save templates.
+2. **Two ways to get click coordinates, both visual:**
+   - **Static UI components** (buttons, icons, tabs, nav bars) → **template matching** via `click_component` / `match_on_fullscreen`. Precise, fast, repeatable. Preferred.
+   - **Dynamic content** (chat messages, search results, popups, context menus) → **screenshot + `image` tool analysis**. Crop the relevant region, ask `image` tool for the position within the crop, calculate screen coordinates from crop bounds.
+   Both are vision-driven. Template matching is automated vision; `image` analysis is LLM vision. Neither uses hardcoded coordinates or guessing.
+3. **Static components MUST have saved templates** — if you need to click a button/icon and it has no template → `learn` the app first. Don't use `image` tool to estimate positions of things that should be templates.
+4. **Dynamic content workflow**: screenshot → crop region of interest → `image` tool to locate target within crop → calculate: `screen_x = (crop_x_start + target_x_in_crop) / 2`, `screen_y = (crop_y_start + target_y_in_crop) / 2` (physical→logical). Always verify with screenshot after clicking.
 5. **Paste > Type** for CJK text and special chars
 6. **Learn incrementally** — save new components after each interaction
 7. **Integer coordinates only** — pynput uses logical screen coordinates (integers)
@@ -123,7 +126,7 @@ These exist because of real bugs:
 2. **Every click gets before/after screenshots** — `click_component` does this automatically; manual clicks must do it explicitly
 3. **No wrong-app learning** — validate frontmost app before learn
 4. **Reject tiny templates** — <30×30 pixels produce false matches
-5. **Vision model never provides click coordinates** — only template matching provides coordinates. Vision model provides understanding.
+5. **Vision model provides coordinates only for dynamic content** — for static UI elements, use template matching. Vision model (via `image` tool + crop) is valid for dynamic content that has no saved template.
 6. **Never send screenshots to conversation** — internal detection only
 7. **If click has no effect** — screenshot, analyze what happened, don't repeat blindly. Possible causes: wrong app in front, window moved, click outside window, element not interactive.
 
