@@ -80,11 +80,8 @@ def get_window_bounds(app_name):
 def capture_window(app_name, out_path=None):
     """Capture a specific app window, return (img_path, win_x, win_y, win_w, win_h)."""
     # Activate app
-    # Use set frontmost (works for all apps including CleanMyMac)
-    subprocess.run(["osascript", "-e",
-        f'tell application "System Events" to set frontmost of process "{app_name}" to true'],
-        capture_output=True, timeout=5)
-    time.sleep(0.3)
+    from platform_input import activate_app
+    activate_app(app_name)
 
     bounds = get_window_bounds(app_name)
     if not bounds:
@@ -1143,20 +1140,14 @@ def click_component(app_name, component_name, verify=True):
 
     # 6. Post-click: verify we're still in the right app
     time.sleep(0.5)
-    try:
-        r = subprocess.run(["osascript", "-e",
-            'tell application "System Events" to return name of first process whose frontmost is true'],
-            capture_output=True, text=True, timeout=5)
-        current_app = r.stdout.strip()
-        if current_app and current_app != app_name:
-            print(f"  ⚠️ APP SWITCHED! Expected '{app_name}', now in '{current_app}'")
-            print(f"  ⚠️ Click may have opened another app. Re-activating {app_name}...")
-            from platform_input import activate_app
-            activate_app(app_name)
-            time.sleep(0.5)
-            return False, f"Click caused app switch to '{current_app}', re-activated {app_name}"
-    except:
-        pass
+    from platform_input import verify_frontmost, activate_app as pi_activate
+    is_correct, actual_app = verify_frontmost(app_name)
+    if not is_correct:
+        print(f"  ⚠️ APP SWITCHED! Expected '{app_name}', now in '{actual_app}'")
+        print(f"  ⚠️ Click may have opened another app. Re-activating {app_name}...")
+        pi_activate(app_name)
+        time.sleep(0.5)
+        return False, f"Click caused app switch to '{actual_app}', re-activated {app_name}"
 
     return True, f"Clicked '{component_name}' at ({screen_x},{screen_y}) conf={conf}"
 
