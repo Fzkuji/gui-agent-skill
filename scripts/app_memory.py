@@ -78,8 +78,14 @@ def get_window_bounds(app_name):
 
 
 def capture_window(app_name, out_path=None):
-    """Capture a specific app window, return (img_path, win_x, win_y, win_w, win_h)."""
-    # Activate app
+    """Capture app window by cropping from full-screen screenshot.
+
+    Always uses full-screen screenshot + crop. This ensures component
+    templates saved during learn() match what match_on_fullscreen() sees.
+    No screencapture -l (which produces different pixel scaling).
+
+    Returns: (img_path, win_x, win_y, win_w, win_h) in logical coords.
+    """
     from platform_input import activate_app
     activate_app(app_name)
 
@@ -92,20 +98,14 @@ def capture_window(app_name, out_path=None):
     if out_path is None:
         out_path = f"/tmp/app_memory_{app_name.lower()}.png"
 
-    # Try window-specific capture via CGWindowList
-    import ui_detector
-    win_info = ui_detector.get_window_info(app_name)
-    if win_info:
-        ui_detector.take_window_screenshot(win_info["id"], out_path)
-    else:
-        # Fallback: full screenshot + crop
-        subprocess.run(["/usr/sbin/screencapture", "-x", "/tmp/_full.png"],
-                       check=True, timeout=5)
-        img = cv2.imread("/tmp/_full.png")
-        # Retina: multiply by 2
-        rx, ry, rw, rh = win_x * 2, win_y * 2, win_w * 2, win_h * 2
-        crop = img[ry:ry+rh, rx:rx+rw]
-        cv2.imwrite(out_path, crop)
+    # Always: full screenshot + crop (consistent pixel scaling)
+    subprocess.run(["/usr/sbin/screencapture", "-x", "/tmp/_full.png"],
+                   check=True, timeout=5)
+    img = cv2.imread("/tmp/_full.png")
+    # Retina: logical * 2 = physical
+    rx, ry, rw, rh = win_x * 2, win_y * 2, win_w * 2, win_h * 2
+    crop = img[ry:ry+rh, rx:rx+rw]
+    cv2.imwrite(out_path, crop)
 
     return out_path, win_x, win_y, win_w, win_h
 
@@ -1084,15 +1084,66 @@ def detect_with_memory(app_name, threshold=0.8):
 # Click: find component and click it
 # ═══════════════════════════════════════════
 
+def match_on_fullscreen(app_name, component_name, threshold=0.8):
+    """Match a component template on FULL SCREEN screenshot.
+
+    No window offsets needed. Returns screen logical coords directly.
+    Returns: (found, logical_x, logical_y, confidence)
+    """
+    profile = load_profile(app_name)
+    comp = profile["components"].get(component_name)
+    if not comp or not comp.get("icon_file"):
+        return False, 0, 0, 0
+
+    app_dir = get_app_dir(app_name)
+    template_path = app_dir / comp["icon_file"]
+    if not template_path.exists():
+        return False, 0, 0, 0
+
+    template = cv2.imread(str(template_path))
+    if template is None:
+        return False, 0, 0, 0
+
+    # Take full screen screenshot
+    screen_path = "/tmp/gui_agent_fullscreen.png"
+    subprocess.run(["screencapture", "-x", screen_path], capture_output=True, timeout=5)
+    screen = cv2.imread(screen_path)
+    if screen is None:
+        return False, 0, 0, 0
+
+    # Template match on full screen (both in physical/retina pixels)
+    gray_screen = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
+    gray_tpl = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+
+    if (gray_tpl.shape[0] > gray_screen.shape[0] or
+        gray_tpl.shape[1] > gray_screen.shape[1]):
+        return False, 0, 0, 0
+
+    result = cv2.matchTemplate(gray_screen, gray_tpl, cv2.TM_CCOEFF_NORMED)
+    _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
+    if max_val < threshold:
+        return False, 0, 0, 0
+
+    # Physical pixel center of match → logical screen coords (÷2 for retina)
+    phys_x = max_loc[0] + template.shape[1] // 2
+    phys_y = max_loc[1] + template.shape[0] // 2
+    logical_x = phys_x // 2
+    logical_y = phys_y // 2
+
+    return True, logical_x, logical_y, round(max_val, 4)
+
+
 def click_component(app_name, component_name, verify=True):
-    """Find a component by template match and click it.
+    """Find a component by template match on FULL SCREEN and click it.
 
-    Uses relative coordinates + window position = absolute screen coordinates.
-    Optionally verifies the target before clicking.
-
+    No window position needed. Match directly on screen → click.
     Returns: (success, message)
     """
-    # 0. System component? Use fixed position, no template match needed
+    from platform_input import click_at, verify_frontmost, activate_app as pi_activate
+
+    # 0. System component? Match on full screen too (no more fixed offsets)
+    # System components are small (traffic lights) — still use relative for now
     if component_name.startswith("sys_") and component_name in MACOS_SYSTEM_COMPONENTS:
         img_path, win_x, win_y, win_w, win_h = capture_window(app_name)
         if not img_path:
@@ -1101,46 +1152,26 @@ def click_component(app_name, component_name, verify=True):
         screen_x = win_x + sys_comp["rel_x"]
         screen_y = win_y + sys_comp["rel_y"]
         print(f"  🎯 System component '{component_name}' → screen({screen_x},{screen_y})")
-        from platform_input import click_at; click_at(screen_x, screen_y) #
-                       capture_output=True, timeout=5)
+        click_at(screen_x, screen_y)
         return True, f"Clicked system component {component_name}"
 
-    # 1. Capture window
-    img_path, win_x, win_y, win_w, win_h = capture_window(app_name)
-    if not img_path:
-        return False, f"Could not capture {app_name} window"
-
-    img = cv2.imread(img_path)
-
-    # 2. Template match
-    found, rel_x, rel_y, conf = match_component(app_name, component_name, img)
+    # 1. Match on full screen — no window offset calculation needed
+    found, screen_x, screen_y, conf = match_on_fullscreen(app_name, component_name)
 
     if not found:
-        return False, f"Component '{component_name}' not found (no template match)"
+        return False, f"Component '{component_name}' not found (no template match on screen)"
 
-    # 3. Convert to screen coordinates
-    screen_x = win_x + rel_x
-    screen_y = win_y + rel_y
+    print(f"  🎯 Found '{component_name}' → screen({screen_x},{screen_y}) conf={conf}")
 
-    print(f"  🎯 Found '{component_name}' at rel({rel_x},{rel_y}) → screen({screen_x},{screen_y}) conf={conf}")
+    # 2. Verify confidence
+    if verify and conf < 0.7:
+        return False, f"Low confidence ({conf}), not clicking"
 
-    # 4. Verify (optional): check that the click target is reasonable
-    if verify:
-        # Check within window bounds
-        if not (0 <= rel_x <= win_w and 0 <= rel_y <= win_h):
-            return False, f"Component position ({rel_x},{rel_y}) outside window bounds ({win_w}x{win_h})"
-
-        # Check confidence
-        if conf < 0.7:
-            return False, f"Low confidence ({conf}), not clicking"
-
-    # 5. Click
-    from platform_input import click_at
+    # 3. Click
     click_at(screen_x, screen_y)
 
-    # 6. Post-click: verify we're still in the right app
+    # 4. Post-click: verify we're still in the right app
     time.sleep(0.5)
-    from platform_input import verify_frontmost, activate_app as pi_activate
     is_correct, actual_app = verify_frontmost(app_name)
     if not is_correct:
         print(f"  ⚠️ APP SWITCHED! Expected '{app_name}', now in '{actual_app}'")

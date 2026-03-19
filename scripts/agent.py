@@ -1313,16 +1313,20 @@ def action_type_text(text, app_name=None):
 
 
 def action_screenshot_and_read(app_name=None):
-    """Take screenshot and OCR the current screen/window."""
+    """Take a full-screen screenshot. No OCR — use image tool to analyze.
+
+    Returns the screenshot path for the agent to inspect visually.
+    """
     if app_name:
         app_name = resolve_app_name(app_name)
         activate_app(app_name)
+        time.sleep(0.3)
 
-    out, code = run_script("gui_agent.py", [
-        "task", "read_screen", "--app", app_name or "Finder"
-    ], timeout=15)
-    print(out)
-    return out
+    screenshot_path = f"/tmp/gui_agent_screen.png"
+    subprocess.run(["screencapture", "-x", screenshot_path], capture_output=True, timeout=5)
+    print(f"  📸 Screenshot saved: {screenshot_path}")
+    print(f"  ℹ️ Use image tool to analyze (OCR removed)")
+    return screenshot_path
 
 
 # ═══════════════════════════════════════════
