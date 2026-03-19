@@ -532,16 +532,20 @@ def observe_state(app_name, include_yolo=False):
 # Workflow Recording — save steps for reuse
 # ═══════════════════════════════════════════
 
-def save_workflow(app_name, workflow_name, steps, description=None, notes=None):
-    """Save a workflow's steps to app memory for future reference.
+def save_workflow(app_name, workflow_name, target_state, description=None, notes=None):
+    """Save a workflow as a named task with a target state.
 
-    Each workflow records:
-    - description: one-line summary for intent matching (REQUIRED, max 30 words)
-    - steps: list of {action, target, result, timestamp}
-    - notes: lessons learned (OCR quirks, timing, etc.)
+    A workflow is NOT a linear step list. It's a target state in the app's
+    state graph. Execution uses find_path() to navigate from any current state.
+
+    Args:
+        app_name: App name
+        workflow_name: e.g., "open_宋文涛_chat", "go_to_contacts"
+        target_state: e.g., "click:宋文涛" — the state to reach
+        description: one-line summary for intent matching (max 30 words)
+        notes: lessons learned
     """
     if description and len(description.split()) > 30:
-        print(f"⚠ Description too long ({len(description.split())} words, max 30). Truncating.")
         description = " ".join(description.split()[:30])
     app_dir = MEMORY_DIR / app_name.lower().replace(" ", "_")
     app_dir.mkdir(parents=True, exist_ok=True)
@@ -552,8 +556,8 @@ def save_workflow(app_name, workflow_name, steps, description=None, notes=None):
     workflow = {
         "app": app_name,
         "workflow": workflow_name,
+        "target_state": target_state,
         "description": description or workflow_name.replace("_", " "),
-        "steps": steps,
         "notes": notes or [],
         "last_run": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
@@ -562,8 +566,66 @@ def save_workflow(app_name, workflow_name, steps, description=None, notes=None):
     with open(path, "w") as f:
         json.dump(workflow, f, indent=2, ensure_ascii=False)
 
-    # Update app summary
+    print(f"  💾 Workflow '{workflow_name}' saved → target: {target_state}")
     update_app_summary(app_name)
+
+
+def run_workflow(app_name, workflow_name):
+    """Run a saved workflow by navigating the state graph to the target state.
+
+    1. Load workflow → get target_state
+    2. Detect current state
+    3. find_path(current, target) → click sequence
+    4. Execute each click (auto-verified by click_component)
+
+    Returns: (success, message)
+    """
+    from app_memory import (find_path, identify_state_by_components,
+                            _detect_visible_components, click_component)
+
+    app_name = resolve_app_name(app_name)
+    app_dir = MEMORY_DIR / app_name.lower().replace(" ", "_") / "workflows"
+    wf_path = app_dir / f"{workflow_name}.json"
+
+    if not wf_path.exists():
+        return False, f"Workflow '{workflow_name}' not found"
+
+    import json
+    wf = json.load(open(wf_path))
+    target = wf.get("target_state")
+    if not target:
+        return False, f"Workflow '{workflow_name}' has no target_state"
+
+    # Detect current state
+    activate_app(app_name)
+    import time; time.sleep(0.5)
+    visible = _detect_visible_components(app_name)
+    current, f1 = identify_state_by_components(app_name, visible)
+
+    if not current:
+        return False, f"Cannot identify current state ({len(visible)} components visible)"
+
+    if current == target:
+        print(f"  ✅ Already at target state '{target}'")
+        return True, f"Already at '{target}'"
+
+    # Find path
+    path = find_path(app_name, current, target)
+    if path is None:
+        return False, f"No path from '{current}' to '{target}' in state graph"
+
+    print(f"  🗺️ Path: {current} → {' → '.join(s for _, s in path)}")
+    print(f"  📍 {len(path)} clicks needed")
+
+    # Execute
+    for i, (click, next_state) in enumerate(path):
+        print(f"  [{i+1}/{len(path)}] Clicking '{click}' → {next_state}")
+        ok, msg = click_component(app_name, click)
+        if not ok:
+            return False, f"Step {i+1} failed: {msg}"
+        import time; time.sleep(0.3)
+
+    return True, f"Reached '{target}' via {len(path)} clicks"
 
 
 def save_meta_workflow(workflow_name, steps, description=None, notes=None):
