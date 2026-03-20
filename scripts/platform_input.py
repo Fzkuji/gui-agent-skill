@@ -10,6 +10,7 @@ Usage:
     from platform_input import activate_app, get_window_bounds, capture_window, get_clipboard, set_clipboard
 """
 
+import os
 import platform
 import subprocess
 import time
@@ -328,6 +329,82 @@ def screenshot(path="/tmp/gui_agent_screen.png"):
     """Take a full-screen screenshot and return the path."""
     subprocess.run(["screencapture", "-x", path], capture_output=True, timeout=5)
     return path
+
+
+def screenshot_region(out_path, method="drag", x1=None, y1=None, x2=None, y2=None):
+    """Take a screenshot of a specific region.
+    
+    Methods:
+    - "drag": Use Cmd+Shift+4 + mouse drag (interactive, saves to Desktop)
+    - "crop": Take full screenshot then crop with PIL (precise, no interaction)
+    - "auto_crop": Take full screenshot, auto-detect the largest white/content 
+                   region (e.g. a slide in PPT, a document in a viewer), crop it.
+    
+    For "drag": x1,y1,x2,y2 are logical screen coordinates.
+    For "crop": x1,y1,x2,y2 are logical screen coordinates, converted to Retina internally.
+    For "auto_crop": no coordinates needed, auto-detects the main content area.
+    
+    Returns: path to saved image, or None on failure.
+    """
+    if method == "drag":
+        key_combo("command", "shift", "4")
+        time.sleep(1)
+        mouse_drag(x1, y1, x2, y2, duration=0.8)
+        time.sleep(1.5)
+        # Find latest screenshot on Desktop
+        import glob
+        files = sorted(glob.glob(os.path.expanduser("~/Desktop/Screenshot*.png")),
+                       key=os.path.getmtime, reverse=True)
+        if files:
+            import shutil
+            shutil.move(files[0], out_path)
+            return out_path
+        return None
+    
+    elif method == "crop":
+        full = screenshot("/tmp/_region_full.png")
+        from PIL import Image
+        img = Image.open(full)
+        # Logical → Retina (2x)
+        crop = img.crop((x1*2, y1*2, x2*2, y2*2))
+        crop.save(out_path)
+        return out_path
+    
+    elif method == "auto_crop":
+        full = screenshot("/tmp/_region_full.png")
+        from PIL import Image
+        import numpy as np
+        import cv2
+        
+        img = Image.open(full)
+        arr = np.array(img)[:, :, :3]
+        gray_img = np.mean(arr, axis=2)
+        
+        # Find largest white region via connected components
+        binary = (gray_img > 245).astype(np.uint8)
+        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary)
+        
+        max_area = 0
+        best = None
+        for i in range(1, num_labels):
+            area = stats[i, 4]
+            w, h = stats[i, 2], stats[i, 3]
+            # Filter: must be reasonably large and roughly rectangular
+            if area > max_area and w > 200 and h > 200:
+                max_area = area
+                best = (stats[i, 0], stats[i, 1], stats[i, 2], stats[i, 3])
+        
+        if best:
+            x, y, w, h = best
+            margin = 3
+            crop = img.crop((x+margin, y+margin, x+w-margin, y+h-margin))
+            crop.save(out_path)
+            return out_path
+        
+        return None
+    
+    else:
+        raise ValueError(f"Unknown method: {method}")
 
 
 def click_at(x, y):
