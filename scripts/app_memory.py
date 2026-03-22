@@ -49,6 +49,15 @@ MEMORY_DIR = SKILL_DIR / "memory" / "apps"
 # Tracker integration (auto-tick operations when tracker is active)
 _TRACKER_STATE = SKILL_DIR / "skills" / "gui-report" / "scripts" / ".tracker_state.json"
 
+def _tracker_auto_tick(counter, n=1):
+    """Auto-tick tracker counter. Silent no-op if tracker not running."""
+    try:
+        sys.path.insert(0, str(SKILL_DIR / "skills" / "gui-report" / "scripts"))
+        from tracker import tick_counter
+        tick_counter(counter, n)
+    except Exception:
+        pass  # Never fail — tracking is best-effort
+
 def _tracker_tick(counter, n=1):
     """Increment a tracker counter if tracker is active. No-op otherwise."""
     try:
@@ -1169,9 +1178,14 @@ def learn_from_screenshot(img_path, domain=None, app_name="chromium", page_name=
 
     # Detect
     icon_elements, det_w, det_h = ui_detector.detect_icons(img_path, conf=0.1, iou=0.3)
+    _tracker_auto_tick("detector_calls")
     text_elements = ui_detector.detect_text(img_path)
+    _tracker_auto_tick("ocr_calls")
     all_elements = ui_detector.merge_elements(icon_elements, text_elements, iou_threshold=0.3)
     print(f"  🔍 Detected {len(all_elements)} elements ({len(icon_elements)} icons, {len(text_elements)} text)")
+
+    _tracker_auto_tick("screenshots")
+    _tracker_auto_tick("learns")
 
     # Get save directory
     if domain:
@@ -1320,15 +1334,20 @@ def record_page_transition(before_img_path, after_img_path, click_label, click_p
 
     try:
         before_elems = ui_detector.detect_text(before_img_path)
+        _tracker_auto_tick("ocr_calls")
         before_texts = set(e.get("label", "").strip() for e in before_elems if e.get("label", "").strip())
     except Exception as ex:
         print(f"  ⚠️ OCR failed on before image: {ex}")
 
     try:
         after_elems = ui_detector.detect_text(after_img_path)
+        _tracker_auto_tick("ocr_calls")
         after_texts = set(e.get("label", "").strip() for e in after_elems if e.get("label", "").strip())
     except Exception as ex:
         print(f"  ⚠️ OCR failed on after image: {ex}")
+
+    _tracker_auto_tick("transitions")
+    _tracker_auto_tick("clicks")
 
     # Diff
     appeared = after_texts - before_texts
