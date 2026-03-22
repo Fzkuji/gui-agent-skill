@@ -95,19 +95,36 @@ Outputs duration, context delta, and operation counts. Use `tracker.py history` 
 
 ---
 
+## ⛔ ABSOLUTE RULES (read every time, no exceptions)
+
+**WHERE DO CLICK COORDINATES COME FROM?**
+
+```
+✅ ALLOWED coordinate sources:
+   1. GPA-GUI-Detector (detect_icons) → bounding box center
+   2. Apple Vision OCR (detect_text) → text bounding box center
+   3. Template matching → saved component position
+
+❌ FORBIDDEN:
+   - LLM/vision model guessing coordinates ("it looks like it's around 500, 300")
+   - Hardcoded pixel positions from memory or documentation
+   - Coordinates from image tool analysis (image tool = understanding ONLY)
+```
+
+**Every click**: screenshot → run GPA-GUI-Detector and/or OCR → get coordinates from detection result → click that coordinate. No exceptions. If detection can't find the element, re-detect or re-learn — do NOT guess.
+
+**This applies everywhere**: local Mac apps, remote VMs (OSWorld), any platform. For remote VMs: download screenshot to Mac → run detection locally → send click coordinates back to VM.
+
 ## Key Principles
 
 1. **Vision-driven, no shortcuts** — screenshot → detect → match → click. Only allowed system calls: `activate` (bring to front), `screencapture`, `platform_input.py` (pynput click/type).
-2. **Coordinates from detection only:**
-   - **Saved components** → template matching (conf≈1.0, pixel-precise)
-   - **Dynamic content** (menus, search results) → GPA-GUI-Detector/OCR detection → bbox center
-   - **`image` tool = understanding only** ("what is this?", "which one?", "did it work?"). NEVER for coordinates.
-3. **Not found = not on screen** — don't lower thresholds. Re-learn current state to discover new components.
+2. **Coordinates from detection only** — see ABSOLUTE RULES above. The `image` tool is for understanding ("what is this?", "which button should I click?"), NEVER for getting pixel coordinates.
+3. **Not found = not on screen** — don't lower thresholds. Re-learn current state to discover what IS on screen.
 4. **State graph drives navigation** — each click records a transition. Use `find_path()` to route between states.
 5. **First time: screenshot + image. Repeat: detection only** — saves tokens on known workflows.
 6. **Paste > Type** for CJK text
 7. **Integer logical coordinates** — pynput uses screen logical pixels
-8. **ALWAYS save to memory** — every GUI operation must save detection results, learned components, and state information to `memory/apps/<appname>/`. This is the core of the system. Even for one-off tasks or benchmarks (e.g., OSWorld), save what you learn about each app. Memory is local (gitignored) but essential for future operations on the same app.
+8. **ALWAYS save to memory** — every GUI operation MUST save detection results, learned components, and state information to `memory/apps/<appname>/`. This is the core of the system. Even for one-off tasks or benchmarks (e.g., OSWorld), save what you learn about each app. Memory is local (gitignored) but essential — it's what makes GUIClaw learn and improve.
 
 ## Safety Rules
 
