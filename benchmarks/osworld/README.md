@@ -61,12 +61,12 @@ GUIClaw runs on the following stack:
 
 | Metric | Value |
 |--------|-------|
-| Tasks tested | 22 / 46 |
-| Tasks passed | **21** |
+| Tasks tested | 20 / 46 |
+| Tasks passed | **19** |
 | Tasks failed | 1 (infrastructure issue) |
-| **Pass rate** | **95.5%** (21/22) |
+| **Pass rate** | **95.0%** (19/20) |
 
-> 21 tasks completed successfully: 18 feasible tasks scored 1.0, and 3 infeasible tasks correctly identified. Only 1 task failed due to Linux Chromium missing a feature (not an agent capability issue).
+> 19 of 20 tasks completed successfully (16 feasible + 3 infeasible). Only 1 task failed due to Linux Chromium missing a feature (not an agent capability issue).
 
 ### Detailed Results
 
@@ -113,9 +113,9 @@ Reference scores from the [OSWorld leaderboard](https://os-world.github.io/) (Ch
 |------|-------|--------|---------|------|
 | 1 | HIPPO Agent w/Opus 4.5 (Lenovo) | 60.4% (25.96/43) | 74.5% | Agentic framework |
 | 2 | Claude Sonnet 4.6 (Anthropic) | 78.5% (32.96/42) | 72.1% | General model |
-| — | **GUIClaw** | **95.5%** (21/22 tested) | TBD | OpenClaw + Claude Opus 4.6 |
+| — | **GUIClaw** | **95.0%** (19/20 tested) | TBD | OpenClaw + Claude Opus 4.6 |
 
-> ⚠️ GUIClaw's score is on a partial Chrome subset (22/46 tasks). Full benchmark in progress. Not directly comparable to full-set results yet, but early numbers are promising.
+> ⚠️ GUIClaw's score is on a partial Chrome subset (20/46 tasks). Full benchmark in progress. Not directly comparable to full-set results yet, but early numbers are promising.
 
 ## Environment Details
 
