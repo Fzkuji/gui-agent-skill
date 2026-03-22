@@ -185,12 +185,17 @@ bash scripts/setup.sh
 
 System Settings → Privacy & Security → Accessibility → Add Terminal / OpenClaw
 
-**3. Enable in OpenClaw**
+**3. Configure OpenClaw**
 
 Add to `~/.openclaw/openclaw.json`:
 ```json
-{ "skills": { "entries": { "gui-agent": { "enabled": true } } } }
+{
+  "skills": { "entries": { "gui-agent": { "enabled": true } } },
+  "tools": { "exec": { "timeoutSec": 60 } }
+}
 ```
+
+> ⚠️ The `timeoutSec: 60` is important — GUIClaw operations (screenshot → detect → click → wait) often take 15-30s. The default timeout is too short and will kill commands mid-execution.
 
 Then just chat with your OpenClaw agent — it reads `SKILL.md` and handles everything automatically.
 
