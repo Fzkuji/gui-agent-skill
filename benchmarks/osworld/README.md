@@ -108,16 +108,15 @@ These 2 tasks failed because the target Chrome feature doesn't exist in this Chr
 
 ## Comparison with Other Agents
 
-Reference scores from the [OSWorld leaderboard](https://os-world.github.io/):
+Reference scores from the [OSWorld leaderboard](https://os-world.github.io/) (Chrome domain):
 
-| Agent | Overall | Method |
-|-------|---------|--------|
-| Human | 72.36% | Manual |
-| Claude Computer Use | 14.90% | Claude 3.5 Sonnet + screenshots |
-| GPT-4V + SoM | 6.27% | GPT-4V + Set-of-Mark |
-| **GUIClaw** | **81.8%** (22 Chrome tasks) | OpenClaw + Claude Opus 4.6 + GPA-GUI-Detector + OCR |
+| Rank | Agent | Chrome | Overall | Type |
+|------|-------|--------|---------|------|
+| 1 | HIPPO Agent w/Opus 4.5 (Lenovo) | 60.4% (25.96/43) | 74.5% | Agentic framework |
+| 2 | Claude Sonnet 4.6 (Anthropic) | 78.5% (32.96/42) | 72.1% | General model |
+| — | **GUIClaw** | **81.8%** (18/22 tested) | TBD | OpenClaw + Claude Opus 4.6 |
 
-> ⚠️ GUIClaw's score is on a partial Chrome subset (22/46 tasks). Full benchmark evaluation in progress.
+> ⚠️ GUIClaw's score is on a partial Chrome subset (22/46 tasks). Full benchmark in progress. Not directly comparable to full-set results yet, but early numbers are promising.
 
 ## Environment Details
 
