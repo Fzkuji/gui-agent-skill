@@ -181,3 +181,5 @@ Reference scores from the [OSWorld leaderboard](https://os-world.github.io/) (Ch
 | Metric | Value |
 |--------|-------|
 | **Score** | **42.0 / 44** (95.5%) |
+
+| 25 | `47543840` | Show cars at Boston Logan, next month 10-11, sort by seats | 1.0 | ✅ | Budget.com: Boston Logan Intl Airport, Apr 10-11, Sort by Number of Seats (High to Low) |
