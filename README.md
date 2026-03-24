@@ -36,13 +36,12 @@
 
 ## 🔥 News
 
-- **[03/24/2026]** v0.8.0 — **Workflow v2 + Report automation**: Target state verification (no pixel comparison), tiered verification (Level 0/1/2), auto tracker via detect_all, one-command report.
-- **[03/23/2026]** 🏆 **OSWorld benchmark**: **45.0/46 Chrome tasks (97.8%)**. [See results →](benchmarks/osworld/)
-- **[03/23/2026]** v0.7.0 — **Memory refactor**: Split storage (components/states/transitions), component forgetting mechanism, state merging by Jaccard similarity, transition dedup.
-- **[03/22/2026]** v0.6.0 — **Unified action flow**: Three visual methods (OCR/GPA-GUI-Detector/image tool) with clear boundaries; detect→match→execute→diff→save as one atomic operation.
-- **[03/21/2026]** v0.5.0 — **Cross-platform detection**: GPA-GUI-Detector on any OS screenshot. First OSWorld evaluation on Ubuntu VM.
-- **[03/19/2026]** v0.3.0–v0.4.0 — Click-graph state architecture, workflow memory, async polling.
-- **[03/10/2026]** v0.0.1–v0.2.0 — Initial release through template matching, per-app visual memory, browser per-site memory.
+- **[2026-03-24]** 🧠 **Smart workflow navigation** — Target state verification with tiered fallback (template match → full detection → LLM). Auto performance tracking via `detect_all`.
+- **[2026-03-23]** 🏆 **OSWorld benchmark: 97.8%** — 45.0/46 Chrome tasks passed. [Results →](benchmarks/osworld/)
+- **[2026-03-23]** 🔄 **Memory overhaul** — Split storage, automatic component forgetting (15 consecutive misses → removed), state merging by Jaccard similarity.
+- **[2026-03-22]** 🔍 **Unified detection pipeline** — `detect_all()` as single entry point; atomic detect → match → execute → verify loop.
+- **[2026-03-21]** 🌐 **Cross-platform support** — GPA-GUI-Detector runs on any OS screenshot (Linux VMs, remote servers).
+- **[2026-03-10]** 🚀 **Initial release** — GPA-GUI-Detector + Apple Vision OCR + template matching + per-app visual memory.
 
 ## 💬 What It Looks Like
 
