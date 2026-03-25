@@ -184,6 +184,46 @@ CONFIRM  → Screenshot → process list empty → terminated ✅
 
 </details>
 
+## 📋 Prerequisites
+
+GUI Agent Skills is an **OpenClaw skill** — it runs inside [OpenClaw](https://github.com/openclaw/openclaw) and uses OpenClaw's LLM orchestration to reason about UI actions. It is **not** a standalone API, CLI tool, or Python library. You need:
+
+1. **[OpenClaw](https://github.com/openclaw/openclaw)** installed and running
+2. **macOS with Apple Silicon** (for GPA-GUI-Detector and Apple Vision OCR)
+3. **Accessibility permissions** granted to OpenClaw/Terminal
+
+The LLM (Claude, GPT, etc.) is provided by your OpenClaw configuration — GUI Agent Skills itself does not call any external APIs directly.
+
+## 🚀 Quick Start
+
+**1. Clone & install**
+```bash
+git clone https://github.com/Fzkuji/GUI-Agent-Skills.git
+cd GUI-Agent-Skills
+bash scripts/setup.sh
+```
+
+**2. Grant accessibility permissions**
+
+System Settings → Privacy & Security → Accessibility → Add Terminal / OpenClaw
+
+**3. Configure OpenClaw**
+
+Add to `~/.openclaw/openclaw.json`:
+```json
+{
+  "skills": { "entries": { "gui-agent": { "enabled": true } } },
+  "tools": { "exec": { "timeoutSec": 300 } },
+  "messages": { "queue": { "mode": "interrupt" } }
+}
+```
+
+> ⚠️ **`timeoutSec: 300`** is important — GUI Agent Skills operation chains (screenshot → detect → click → wait → verify) can take a while. A 5-minute timeout is recommended. The default is too short and will kill commands mid-execution.
+
+> 💡 **`queue.mode: "interrupt"`** is recommended — GUI operations take time, and interrupt mode lets you send any message to immediately abort the current agent operation. Without it, your messages queue up and the agent won't see them until it finishes.
+
+Then just chat with your OpenClaw agent — it reads `SKILL.md` and handles everything automatically.
+
 ## 🏗️ Architecture
 
 <p align="center">
@@ -336,47 +376,7 @@ GUI Agent Skills uses visual detection for **decisions** and the most efficient 
 | **GPA-GUI-Detector** (`detect_icons`) | Bounding boxes + coordinates ✅ (no labels) | Finding icons, buttons, non-text elements |
 | **image tool** (LLM vision) | Semantic understanding ⛔ NO coordinates | Understanding the scene, deciding WHAT to click |
 
-## ⚠️ Prerequisites
-
-GUI Agent Skills is an **OpenClaw skill** — it runs inside [OpenClaw](https://github.com/openclaw/openclaw) and uses OpenClaw's LLM orchestration to reason about UI actions. It is **not** a standalone API, CLI tool, or Python library. You need:
-
-1. **[OpenClaw](https://github.com/openclaw/openclaw)** installed and running
-2. **macOS with Apple Silicon** (for GPA-GUI-Detector and Apple Vision OCR)
-3. **Accessibility permissions** granted to OpenClaw/Terminal
-
-The LLM (Claude, GPT, etc.) is provided by your OpenClaw configuration — GUI Agent Skills itself does not call any external APIs directly.
-
-## 🚀 Quick Start
-
-**1. Clone & install**
-```bash
-git clone https://github.com/Fzkuji/GUI-Agent-Skills.git
-cd GUI-Agent-Skills
-bash scripts/setup.sh
-```
-
-**2. Grant accessibility permissions**
-
-System Settings → Privacy & Security → Accessibility → Add Terminal / OpenClaw
-
-**3. Configure OpenClaw**
-
-Add to `~/.openclaw/openclaw.json`:
-```json
-{
-  "skills": { "entries": { "gui-agent": { "enabled": true } } },
-  "tools": { "exec": { "timeoutSec": 300 } },
-  "messages": { "queue": { "mode": "interrupt" } }
-}
-```
-
-> ⚠️ **`timeoutSec: 300`** is important — GUI Agent Skills operation chains (screenshot → detect → click → wait → verify) can take a while. A 5-minute timeout is recommended. The default is too short and will kill commands mid-execution.
-
-> 💡 **`queue.mode: "interrupt"`** is recommended — GUI operations take time, and interrupt mode lets you send any message to immediately abort the current agent operation. Without it, your messages queue up and the agent won't see them until it finishes.
-
-Then just chat with your OpenClaw agent — it reads `SKILL.md` and handles everything automatically.
-
-## ⚠️ Safety & Protocol
+## 🛡️ Safety & Protocol
 
 Every action follows a unified detect-match-execute-save protocol:
 
