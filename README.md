@@ -189,8 +189,8 @@ CONFIRM  → Screenshot → process list empty → terminated ✅
 GUI Agent Skills is an **OpenClaw skill** — it runs inside [OpenClaw](https://github.com/openclaw/openclaw) and uses OpenClaw's LLM orchestration to reason about UI actions. It is **not** a standalone API, CLI tool, or Python library. You need:
 
 1. **[OpenClaw](https://github.com/openclaw/openclaw)** installed and running
-2. **macOS with Apple Silicon** (for GPA-GUI-Detector and Apple Vision OCR)
-3. **Accessibility permissions** granted to OpenClaw/Terminal
+2. **macOS with Apple Silicon** *(recommended)* — enables Apple Vision OCR for high-accuracy text detection. GPA-GUI-Detector and core functionality work on any platform.
+3. **Accessibility permissions** granted to OpenClaw/Terminal (macOS only)
 
 The LLM (Claude, GPT, etc.) is provided by your OpenClaw configuration — GUI Agent Skills itself does not call any external APIs directly.
 
