@@ -1,9 +1,0 @@
-{
-  "name": "@gui-agency-pack/platform-detect",
-  "version": "0.1.0",
-  "type": "module",
-  "description": "GUI Agency Pack - Platform detection plugin for OpenClaw",
-  "openclaw": {
-    "extensions": ["./index.js"]
-  }
-}
