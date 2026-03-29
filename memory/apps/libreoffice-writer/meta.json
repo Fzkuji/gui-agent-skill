@@ -8,5 +8,10 @@
     1080
   ],
   "forget_threshold": 15,
-  "tips": []
+  "tips": [
+    "Save docx: Ctrl+S \u2192 Enter to confirm Keep Current Format",
+    "Close file: Ctrl+W (not Ctrl+Q)",
+    "Insert image: python-docx add_picture() then upload, or Insert menu via GUI",
+    "Document Recovery dialog: appears after force-killing soffice \u2014 use Ctrl+W to close cleanly"
+  ]
 }

@@ -8,5 +8,12 @@
     922
   ],
   "forget_threshold": 15,
-  "tips": []
+  "tips": [
+    "Cell navigation: click Name Box \u2192 Ctrl+A \u2192 type cell ref (e.g. A2) \u2192 Enter",
+    "Numbers: do NOT prefix with apostrophe \u2014 3E+07 is just a narrow column display issue",
+    "Save xlsx: Ctrl+S \u2192 Enter to confirm Keep Current Format dialog",
+    "Close file: Ctrl+W (not Ctrl+Q which quits entire LO)",
+    "Sheet reorder: use soffice --headless macro (openpyxl destroys charts)",
+    "openpyxl sheet default name is 'Sheet' not 'Sheet1' \u2014 set ws.title explicitly"
+  ]
 }

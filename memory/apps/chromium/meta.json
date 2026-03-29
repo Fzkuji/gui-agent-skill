@@ -8,5 +8,7 @@
     1080
   ],
   "forget_threshold": 15,
-  "tips": []
+  "tips": [
+    "Cookie/privacy dialogs: dismiss before interacting with page content"
+  ]
 }

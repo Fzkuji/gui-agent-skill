@@ -8,5 +8,9 @@
     1080
   ],
   "forget_threshold": 15,
-  "tips": []
+  "tips": [
+    "Save pptx: Ctrl+S \u2192 Enter to confirm format dialog",
+    "Slide notes: python-pptx can modify notes programmatically",
+    "Background image: add_picture() to slide, move to back of shape tree"
+  ]
 }
