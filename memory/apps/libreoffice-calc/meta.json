@@ -8,14 +8,5 @@
     922
   ],
   "forget_threshold": 15,
-  "tips": [
-    "Cell navigation: click Name Box (~91,184) → Ctrl+A → type cell ref (A2) → Enter",
-    "Text input (Linux): use xdotool type --delay 10 \"text\" (not pyautogui.typewrite)",
-    "Numbers: do NOT prefix with apostrophe — 3E+07 is just a narrow column display issue",
-    "Save xlsx: Ctrl+S → Enter to confirm Keep Current Format dialog",
-    "Close file: Ctrl+W (not Ctrl+Q which quits entire LO)",
-    "Sheet reorder: use soffice --headless macro (openpyxl destroys charts)",
-    "xclip paste unreliable in LO — always prefer xdotool type",
-    "openpyxl sheet default name is Sheet not Sheet1 — set ws.title explicitly"
-  ]
+  "tips": []
 }

@@ -8,11 +8,5 @@
     1080
   ],
   "forget_threshold": 15,
-  "tips": [
-    "Text input: xdotool type for reliable input on Linux",
-    "Save pptx: Ctrl+S → Enter to confirm format",
-    "Slide notes: python-pptx can modify notes programmatically",
-    "Background image: add_picture() to slide, move to back of shape tree",
-    "Compare evaluator checks ALL shapes including paragraph count — be careful with edits"
-  ]
+  "tips": []
 }

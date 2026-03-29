@@ -8,11 +8,5 @@
     1080
   ],
   "forget_threshold": 15,
-  "tips": [
-    "Remote debugging: --remote-debugging-port=1337, socat to 9222",
-    "Tab management via CDP: curl http://localhost:9222/json/list",
-    "Close tab: curl http://localhost:9222/json/close/{tab_id}",
-    "Evaluator is_expected_tabs checks EXACT tab list — no extra tabs allowed",
-    "Cookie/privacy dialogs: dismiss before interacting with page content"
-  ]
+  "tips": []
 }

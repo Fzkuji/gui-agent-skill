@@ -8,11 +8,5 @@
     1080
   ],
   "forget_threshold": 15,
-  "tips": [
-    "Text input (Linux): use xdotool type --delay 10 for reliable input",
-    "Save docx: Ctrl+S → Enter to confirm Keep Current Format",
-    "Close file: Ctrl+W (not Ctrl+Q)",
-    "Insert image: python-docx add_picture() then upload, or Insert menu via GUI",
-    "Document Recovery dialog: appears after killing soffice — use Ctrl+W to close cleanly"
-  ]
+  "tips": []
 }
