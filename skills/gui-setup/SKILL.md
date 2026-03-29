@@ -1,23 +1,65 @@
 ---
 name: gui-setup
-description: "First-time setup for GUI Agent on a new Mac — install dependencies, models, configure permissions."
+description: "First-time setup for GUI Agency Pack — install dependencies for local (Mac/Linux) and remote (VM) operation."
 ---
 
 # Setup — New Machine
 
+## Quick Start
+
 ```bash
-git clone https://github.com/Fzkuji/GUI Agent Skills.git
-cd GUI Agent Skills
+git clone https://github.com/Fzkuji/GUI-Agency-Pack.git
+cd GUI-Agency-Pack
 bash scripts/setup.sh
 ```
 
-Installs: cliclick, Python 3.12, PyTorch, ultralytics, OpenCV, GPA-GUI-Detector (40MB → `~/GPA-GUI-Detector/`)
+## Dependencies by Platform
 
-**Accessibility permissions required**: System Settings → Privacy & Security → Accessibility → Add Terminal / OpenClaw
+### macOS (local operation)
+
+```bash
+# Python venv
+python3 -m venv ~/gui-agent-env
+source ~/gui-agent-env/bin/activate
+
+# Core dependencies
+pip install pynput opencv-python pillow requests
+
+# GPA-GUI-Detector (UI element detection, ~40MB)
+pip install torch ultralytics
+git clone https://huggingface.co/Salesforce/GPA-GUI-Detector ~/GPA-GUI-Detector
+
+# Accessibility permissions required:
+# System Settings → Privacy & Security → Accessibility → Add Terminal / OpenClaw
+```
+
+### Linux (local operation)
+
+```bash
+# System tools
+sudo apt install xdotool wmctrl xclip scrot
+
+# Python venv
+python3 -m venv ~/gui-agent-env
+source ~/gui-agent-env/bin/activate
+
+# Core dependencies
+pip install pyautogui opencv-python pillow requests
+```
+
+### Remote VM (OSWorld or similar)
+
+The VM needs these pre-installed:
+```bash
+# On the VM:
+sudo apt install xdotool wmctrl
+pip install pyautogui
+# HTTP server at port 5000 (OSWorld provides this automatically)
+```
 
 ## OpenClaw Configuration
 
-Add to `~/.openclaw/openclaw.json` (or use `openclaw config`):
+Add to `~/.openclaw/openclaw.json`:
 
 ```json
 {
@@ -30,51 +72,57 @@ Add to `~/.openclaw/openclaw.json` (or use `openclaw config`):
     "queue": {
       "mode": "interrupt"
     }
+  },
+  "skills": {
+    "entries": {
+      "gui-agent": {
+        "enabled": true
+      }
+    }
   }
 }
 ```
 
-**Why `timeoutSec: 300`**: GUI Agent Skills operation chains (screenshot → detect → click → wait → verify) can take a while. A 5-minute timeout is recommended. The default is too short and will kill commands mid-execution with SIGTERM.
+- **`timeoutSec: 300`**: GUI operations (screenshot → detect → click → verify) can take time
+- **`queue.mode: "interrupt"`**: lets you abort long-running GUI operations
 
-**Why `queue.mode: "interrupt"`**: GUI operations take time. Interrupt mode lets you send any message to immediately abort the current agent operation.
-
-## Scripts
+## Key Scripts
 
 | Script | Purpose |
 |--------|---------|
-| `agent.py` | **Unified entry point** — all GUI ops go through here |
-| `ui_detector.py` | Detection engine (GPA-GUI-Detector + OCR + Swift window info) |
-| `app_memory.py` | Per-app visual memory (learn/detect/click/verify) |
-| `gui_agent.py` | Legacy task executor (send_message, read_messages) |
-| `template_match.py` | Template matching utilities |
-| `setup.sh` | First-run setup |
+| `scripts/activate.py` | Detect local platform, print environment info |
+| `scripts/gui_action.py` | **Unified GUI action interface** — all operations go through here |
+| `scripts/ui_detector.py` | OCR + YOLO UI element detection |
+| `scripts/app_memory.py` | Per-app visual memory (learn/detect components) |
 
-All scripts use venv: `source ~/gui-agent-env/bin/activate`
+### gui_action.py Usage
+
+```bash
+source ~/gui-agent-env/bin/activate
+cd path/to/GUI-Agency-Pack
+
+# Local operations (default)
+python3 scripts/gui_action.py click 500 300
+python3 scripts/gui_action.py type "hello"
+python3 scripts/gui_action.py screenshot /tmp/s.png
+
+# Remote VM operations
+python3 scripts/gui_action.py click 500 300 --remote http://VM_IP:5000
+python3 scripts/gui_action.py type "hello" --remote http://VM_IP:5000
+```
 
 ## Models
 
-| Model | Size | Auto-installed | Purpose |
-|-------|------|----------------|---------|
-| **GPA-GUI-Detector** | 40MB | ✅ `~/GPA-GUI-Detector/model.pt` | UI element detection |
-| OmniParser V2 | 1.1GB | ❌ | Alt detection (weaker) |
-| GUI-Actor 2B | 4.5GB | ❌ | End-to-end grounding (experimental) |
+| Model | Size | Purpose |
+|-------|------|---------|
+| **GPA-GUI-Detector** | 40MB | UI element detection (YOLO-based) |
+
+Location: `~/GPA-GUI-Detector/model.pt`
 
 ## Path Conventions
 
 - Venv: `~/gui-agent-env/`
 - Model: `~/GPA-GUI-Detector/model.pt`
 - Memory: `<skill-dir>/memory/apps/<appname>/`
-- All paths use `os.path.expanduser("~")`, NOT hardcoded usernames
-
-## Scene Index (Reference)
-
-| Scene | Location | Goal |
-|-------|----------|------|
-| **Atomic Actions** | `actions/_actions.yaml` | click, type, paste, detect... |
-| **WeChat** | `scenes/wechat/` | Send/read messages |
-| **Discord** | `scenes/discord.yaml` | Send/read messages |
-| **Telegram** | `scenes/telegram.yaml` | Send/read messages |
-| **1Password** | `scenes/1password.yaml` | Retrieve credentials |
-| **VPN Reconnect** | `scenes/vpn-reconnect.yaml` | Reconnect GlobalProtect |
-
-Scene files are reference only — not executable.
+- Actions: `<skill-dir>/actions/`
+- Backends: `<skill-dir>/scripts/backends/`
