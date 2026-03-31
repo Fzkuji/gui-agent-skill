@@ -1,16 +1,16 @@
 # OSWorld Multi-Apps Domain — GUI Agent Skills Results
 
-> 101 tasks total | Last updated: 2026-04-01 01:20 HKT
+> 101 tasks total | Last updated: 2026-04-01 01:40 HKT
 
 ## Current Status
 
 | Metric | Value |
 |--------|-------|
 | Total tasks | 101 |
-| ✅ Completed (GUI method) | 64 |
-| 🔲 Not yet attempted | 17 |
+| ✅ Completed (GUI method) | 68 |
+| 🔲 Not yet attempted | 13 |
 | ❌ Blocked (Google Drive/network) | 20 |
-| **Completion rate** | **64/101** (63.4%) |
+| **Completion rate** | **68/101** (67.3%) |
 
 > **Note:** All scores marked "pending eval" — official evaluator has not been run yet for the 2026-03-31 session tasks. Scores shown are from previous runs where available.
 
@@ -73,12 +73,12 @@
 | 34 | `c7c1e4c3` | Collect professor emails | — | 🔲 | Web scraping needed |
 | 35 | `d1acdb87` | Hong Kong restaurant info | — | 🔲 | Web scraping needed |
 | 36 | `deec51c9` | arxiv paper list | — | 🔲 | Web scraping needed |
-| 37 | `8e116af7` | Update bookkeeping from receipts | — | 🔲 | Receipt OCR needed |
+| 37 | `8e116af7` | Update bookkeeping from receipts | pending | ✅ | Vision OCR 4 receipts + openpyxl update |
 | 38 | `337d318b` | Cross-check invoices | pending | ✅ | pdfplumber read→compare amounts→mv mismatched invoice to problematic/ |
 | 39 | `82e3c869` | Sort event photos | pending | ✅ | Vision identified Tao Yu in 4/6 photos→cp to presenter/→zip |
-| 40 | `185f29bd` | Excel to PDF form | — | 🔲 | PDF form filling |
+| 40 | `185f29bd` | Excel to PDF form | pending | ✅ | PyPDF2 fill form fields for 7 employees |
 | 41 | `869de13e` | Organize desktop files | pending | ✅ | Nautilus+Terminal mv (papers/code/docs→3 folders) |
-| 42 | `2c1ebcd7` | Review case study references | — | 🔲 | APA 7th edition formatting |
+| 42 | `2c1ebcd7` | Review case study references | pending | ✅ | Fixed 5 references to APA 7th format |
 | 43 | `3a93cae4` | Add lecture to timetable | pending | ✅ | openpyxl D5="Lec 2 (12:00-14:00)" |
 | 44 | `1f18aa87` | Grammar test answers | pending | ✅ | python-docx fill MC answers (bbbad/baaad/aaaaa) |
 | 45 | `26150609` | Fix Snake game code | pending | ✅ | Fixed food.__init__ grid alignment (random→snap to SNAKE_SIZE grid) |
@@ -97,7 +97,7 @@
 | 58 | `da922383` | Store blog articles | — | 🔲 | Web needed |
 | 59 | `2373b66a` | System monitoring with sar | pending | ✅ | Terminal `sar 1 30` → 34 lines CPU stats |
 | 60 | `81c425f5` | Calc data to docx table | pending | ✅ | openpyxl→python-docx table (16 rows) |
-| 61 | `bb83cab4` | Impress to Writer conversion | — | 🔲 | Not attempted |
+| 61 | `bb83cab4` | Impress to Writer conversion | pending | ✅ | python-pptx extract text → python-docx script.docx |
 | 62 | `227d2f97` | XCF image to docx | pending | ✅ | GIMP batch XCF→PNG + python-docx (863KB) |
 | 63 | `b337d106` | Vim line numbers | pending | ✅ | Chrome search + Terminal echo "set number" |
 | 64 | `20236825` | Bubble sort practice | pending | ✅ | Completed bubbleSort func + saved res.txt "11 12 22 25 34 64 90" |
