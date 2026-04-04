@@ -2,25 +2,26 @@
 gui_harness.runtime — GUIRuntime: auto-detect the best available LLM provider.
 
 Priority order:
-  1. Anthropic API (ANTHROPIC_API_KEY env var)
-  2. OpenAI API (OPENAI_API_KEY env var)
-  3. Claude Code CLI (claude binary in PATH)
+  1. OpenClaw CLI (`openclaw agent`) ← default, no extra cost
+  2. Claude Code CLI (`claude -p`) ← uses subscription
+  3. Anthropic API (ANTHROPIC_API_KEY) ← pay per token
+  4. OpenAI API (OPENAI_API_KEY) ← pay per token
 
-OpenClaw users: OpenClaw sets ANTHROPIC_API_KEY or OPENAI_API_KEY in its
-environment, so GUIRuntime auto-detects and works out of the box.
-No manual configuration needed.
+OpenClaw users: just `pip install -e .` and go. GUIRuntime detects
+`openclaw` in PATH and routes all LLM calls through it.
 
 Session mode: @agentic_function(summarize={"depth": 0, "siblings": 0})
-ensures the OpenClaw agent's session handles context accumulation.
-Each function only sends its own content to the LLM.
+skips Context tree injection. The OpenClaw session accumulates context
+automatically, so each function only sends its own content.
 
 Usage:
     from gui_harness.runtime import GUIRuntime
 
-    runtime = GUIRuntime()  # auto-detects provider
-    # or explicitly:
-    runtime = GUIRuntime(provider="anthropic", model="claude-sonnet-4-20250514")
-    runtime = GUIRuntime(provider="openai", model="gpt-4o")
+    runtime = GUIRuntime()                          # auto-detect (recommended)
+    runtime = GUIRuntime(provider="openclaw")        # force OpenClaw
+    runtime = GUIRuntime(provider="claude-code")     # force Claude Code CLI
+    runtime = GUIRuntime(provider="anthropic")       # force Anthropic API
+    runtime = GUIRuntime(provider="openai")          # force OpenAI API
 """
 
 from __future__ import annotations
@@ -80,23 +81,21 @@ def _detect_provider() -> tuple[str, str]:
 
 class GUIRuntime(Runtime):
     """
-    Auto-detecting GUI runtime.
+    Auto-detecting GUI runtime. Zero configuration for OpenClaw users.
 
-    Picks the best available provider based on environment:
-      - ANTHROPIC_API_KEY → AnthropicRuntime (Claude, with prompt caching)
-      - OPENAI_API_KEY → OpenAIRuntime (GPT-4o vision)
-      - claude CLI → ClaudeCodeRuntime (no API key, uses subscription)
-
-    OpenClaw users: OpenClaw manages API keys in its environment.
-    GUIRuntime auto-detects them — zero configuration needed.
+    Detection priority:
+      1. openclaw CLI → _OpenClawRuntime (recommended, no extra cost)
+      2. claude CLI → ClaudeCodeRuntime (subscription)
+      3. ANTHROPIC_API_KEY → AnthropicRuntime (pay per token)
+      4. OPENAI_API_KEY → OpenAIRuntime (pay per token)
 
     Args:
-        provider:   Force a provider ("anthropic", "openai", "claude-code").
+        provider:   Force a provider: "openclaw", "claude-code", "anthropic", "openai".
                     If None, auto-detects.
         model:      Model name override.
         system:     System prompt override.
         max_tokens: Max response tokens (default: 4096).
-        **kwargs:   Forwarded to the provider Runtime.
+        **kwargs:   Forwarded to the underlying provider Runtime.
     """
 
     def __init__(

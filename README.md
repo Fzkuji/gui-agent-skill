@@ -399,43 +399,35 @@ Every action follows a unified detect-match-execute-save protocol:
 
 ## 🧬 Agentic Programming Layer
 
-GUI Agent Harness includes `gui_harness/` — a programmatic interface powered by [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming).
+GUI Agent Harness includes `gui_harness/` — a programmatic Python interface powered by [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming).
 
-**Designed for OpenClaw.** The LLM calls route through OpenClaw gateway — no separate API keys needed. OpenClaw agent accumulates session context, so each function only sends its own data.
+**Designed for OpenClaw.** If OpenClaw is installed, everything works out of the box:
+
+```bash
+pip install -e .        # install
+```
 
 ```python
 from gui_harness import observe, act, verify
+from gui_harness.runtime import GUIRuntime
 
-# OpenClaw agent calls these functions:
-result = observe(task="find the login button")
+runtime = GUIRuntime()  # auto-detects OpenClaw, zero config
+
+observe(task="find the login button", runtime=runtime)
 # → screenshot + OCR + detection + LLM analysis
-# → returns {app_name, page_description, target_visible, target_location, ...}
 
-result = act(action="click", target="login button")
-# → finds target coordinates from OCR/detection lists
-# → executes click, checks if screen changed
+act(action="click", target="login button", runtime=runtime)
+# → find coordinates + click + check screen changed
 
-result = verify(expected="dashboard is visible")
-# → screenshot + OCR + LLM verification
+verify(expected="dashboard is visible", runtime=runtime)
+# → screenshot + LLM verification
 ```
 
-**Context management:** Each `@agentic_function` uses `summarize={"depth": 0, "siblings": 0}` (session mode) — only sends its own content to the LLM. OpenClaw's session handles context accumulation.
+**LLM provider priority:** OpenClaw (`openclaw agent`) → Claude Code CLI → Anthropic API → OpenAI API. OpenClaw and Claude Code use your subscription (no per-token cost). API providers are pay-per-token fallbacks.
 
-**For non-OpenClaw use:** Switch to API mode by removing the `summarize` parameter (defaults to full context injection). See [docs/agentic-programming.md](docs/agentic-programming.md) for details.
+**For VMs (OSWorld):** `patch_for_vm("http://VM_IP:5000")` redirects all primitives to the VM.
 
-**Setup for OpenClaw:**
-1. OpenClaw must be running (it sets `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in the environment)
-2. `GUIRuntime()` auto-detects the available provider — zero configuration
-3. That's it
-
-**Quick install:**
-```bash
-pip install -e .                    # core
-pip install -e ".[anthropic]"       # + Claude support (recommended)
-pip install -e ".[openai]"          # + GPT support
-```
-
-📖 Full documentation: [docs/agentic-programming.md](docs/agentic-programming.md)
+📖 Full docs: [docs/agentic-programming.md](docs/agentic-programming.md)
 
 ## 🗂️ Project Structure
 

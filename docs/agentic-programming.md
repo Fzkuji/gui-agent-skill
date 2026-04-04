@@ -1,155 +1,179 @@
-# Agentic Programming Integration
+# Agentic Programming Layer
 
-> `gui_harness/` — GUI automation powered by [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming)
+> `gui_harness/` — programmatic interface for GUI automation, powered by [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming).
 
-## Architecture
+## Quick Start
 
-```
-┌─────────────────────────────────────────────────┐
-│  OpenClaw Agent (the LLM — Claude/GPT/etc.)     │
-│  ┌───────────────────────────────────────────┐   │
-│  │ OpenClaw session accumulates context      │   │
-│  │ Agent decides what to do next             │   │
-│  │ Agent calls gui_harness functions         │   │
-│  └──────────┬────────────────────────────────┘   │
-│             │ calls                               │
-│  ┌──────────▼────────────────────────────────┐   │
-│  │ gui_harness/functions/                    │   │
-│  │  @agentic_function(summarize={d:0, s:0})  │   │
-│  │  observe() → screenshot + OCR + LLM       │   │
-│  │  act()     → find target + click          │   │
-│  │  verify()  → check result                 │   │
-│  │  learn()   → label UI components          │   │
-│  │  navigate()→ BFS state graph (compress)   │   │
-│  └──────────┬────────────────────────────────┘   │
-│             │ calls                               │
-│  ┌──────────▼────────────────────────────────┐   │
-│  │ gui_harness/primitives/                   │   │
-│  │  screenshot.take()                        │   │
-│  │  ocr.detect_text()                        │   │
-│  │  detector.detect_all()                    │   │
-│  │  input.mouse_click() / paste_text()       │   │
-│  │  template_match.find_template()           │   │
-│  │  (pure Python, no LLM, no decorator)      │   │
-│  └───────────────────────────────────────────┘   │
-│             │ calls                               │
-│  ┌──────────▼────────────────────────────────┐   │
-│  │ scripts/                                  │   │
-│  │  platform_input.py (pynput/cliclick)      │   │
-│  │  ui_detector.py (GPA + Apple Vision OCR)  │   │
-│  │  template_match.py                        │   │
-│  │  app_memory.py (state graph + components) │   │
-│  └───────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────┘
+### 1. Install
+
+```bash
+cd GUI-Agent-Harness
+pip install -e .
 ```
 
-## Context Management: Two Modes
+That's it. If OpenClaw is installed, everything works out of the box.
 
-Agentic Programming supports two context modes via `@agentic_function(summarize=...)`:
-
-### Session Mode (OpenClaw) — Default
+### 2. Use
 
 ```python
-@agentic_function(summarize={"depth": 0, "siblings": 0})
-def observe(task, runtime=None):
-    """Only sends this call's data. OpenClaw accumulates context."""
-    return runtime.exec(content=[...])
-```
-
-- **`summarize={"depth": 0, "siblings": 0}`** — skip Context tree injection
-- OpenClaw agent IS the runtime; it sees all prior calls in its session
-- Each function only sends its own screenshot + OCR data
-- No redundant context duplication
-
-### API Mode (Standalone) — For non-OpenClaw use
-
-```python
-@agentic_function  # summarize=None (default) → full context injection
-def observe(task, runtime=None):
-    """Injects full Context tree into every LLM call."""
-    return runtime.exec(content=[...])
-```
-
-- **`summarize=None`** (default) — auto-inject ancestor + sibling summaries
-- Needed when calling stateless APIs directly (no session memory)
-- Each LLM call receives the full execution history
-
-**Current gui_harness uses Session Mode** because it's designed for OpenClaw.
-
-## Runtime: GUIRuntime
-
-`GUIRuntime` auto-detects the best available LLM provider:
-
-```python
+from gui_harness import observe, act, verify
 from gui_harness.runtime import GUIRuntime
 
-runtime = GUIRuntime()  # auto-detect (recommended)
-# or explicitly:
-runtime = GUIRuntime(provider="anthropic", model="claude-sonnet-4-20250514")
-runtime = GUIRuntime(provider="openai", model="gpt-4o")
+runtime = GUIRuntime()  # auto-detects OpenClaw
+
+# Observe the screen
+result = observe(task="find the login button", runtime=runtime)
+# → {app_name, page_description, visible_text, target_visible, target_location, ...}
+
+# Click something
+result = act(action="click", target="login button", runtime=runtime)
+# → {action, target, coordinates, success, screen_changed, ...}
+
+# Verify the result
+result = verify(expected="dashboard is visible", runtime=runtime)
+# → {expected, actual, verified, evidence, ...}
 ```
 
-**Auto-detection priority:**
-1. `ANTHROPIC_API_KEY` env var → AnthropicRuntime (Claude, prompt caching)
-2. `OPENAI_API_KEY` env var → OpenAIRuntime (GPT-4o vision)
-3. `claude` CLI in PATH → ClaudeCodeRuntime (no API key, uses subscription)
-
-**OpenClaw users:** OpenClaw manages API keys in its environment. GUIRuntime
-auto-detects them — zero configuration needed. Just make sure OpenClaw is running.
-
-## Functions
-
-| Function | Decorator | Calls LLM? | Description |
-|----------|-----------|------------|-------------|
-| `observe()` | `@agentic_function(summarize={d:0,s:0})` | Yes | Screenshot + OCR + detection + LLM analysis |
-| `act()` | `@agentic_function(summarize={d:0,s:0})` | Yes | Find target + execute click/type |
-| `verify()` | `@agentic_function(summarize={d:0,s:0})` | Yes | Check if action succeeded |
-| `learn()` | `@agentic_function(summarize={d:0,s:0})` | Yes | Label UI components |
-| `navigate()` | `@agentic_function(compress=True)` | No* | BFS state graph navigation |
-| `remember()` | `@agentic_function` | No | Manage visual memory |
-| `send_message()` | `@agentic_function(compress=True)` | No* | High-level: observe → navigate → type → verify |
-| `read_messages()` | `@agentic_function(compress=True)` | No* | High-level: navigate → observe |
-
-\* These functions call other `@agentic_function`s internally, which may call LLM.
-
-`compress=True` means callers see only the final result — internal sub-steps are hidden from `summarize()`.
-
-## VM Support
-
-For remote VMs (e.g., OSWorld Ubuntu), use `vm_adapter.py`:
+### 3. For VMs (OSWorld)
 
 ```python
 from gui_harness.primitives.vm_adapter import patch_for_vm
 patch_for_vm("http://172.16.105.128:5000")
-
-# Now all primitives route through the VM HTTP API:
-# screenshot → GET /screenshot
-# mouse/keyboard → POST /execute (pyautogui)
-# OCR/detection → still runs locally on downloaded screenshots
+# Now all primitives route to the VM. Functions work the same.
 ```
+
+---
+
+## How It Works
+
+```
+You (or OpenClaw) call a function
+        │
+        ▼
+  @agentic_function          ← decorator records the call to Context tree
+  observe(task="...")
+        │
+        ├─ screenshot.take()        ← primitive (pure Python)
+        ├─ ocr.detect_text()        ← primitive (Apple Vision / EasyOCR)
+        ├─ detector.detect_all()    ← primitive (GPA-GUI-Detector)
+        │
+        └─ runtime.exec(content=[   ← sends data to LLM
+             screenshot + OCR data
+           ])
+        │
+        ▼
+  LLM analyzes and returns structured JSON
+        │
+        ▼
+  Result stored in Context tree + returned to caller
+```
+
+**Key:** Python handles the deterministic parts (screenshot, OCR, detection). The LLM only does reasoning (analyzing what's on screen, deciding where to click).
+
+---
+
+## LLM Provider
+
+`GUIRuntime()` auto-detects the best available provider:
+
+| Priority | Provider | Cost | How |
+|----------|----------|------|-----|
+| 1 | **OpenClaw** | Free* | `openclaw agent` CLI |
+| 2 | **Claude Code** | Subscription | `claude -p` CLI |
+| 3 | **Anthropic API** | Per token | `ANTHROPIC_API_KEY` env var |
+| 4 | **OpenAI API** | Per token | `OPENAI_API_KEY` env var |
+
+\* Uses your existing OpenClaw configuration.
+
+```python
+runtime = GUIRuntime()                        # auto-detect (recommended)
+runtime = GUIRuntime(provider="openclaw")     # force OpenClaw
+runtime = GUIRuntime(provider="claude-code")  # force Claude Code CLI
+runtime = GUIRuntime(provider="anthropic")    # force Anthropic API
+runtime = GUIRuntime(provider="openai")       # force OpenAI API
+```
+
+**OpenClaw users:** OpenClaw is detected automatically. Each `GUIRuntime()` creates a new OpenClaw session (`--session-id`). The session accumulates context across function calls, so each function only sends its own data.
+
+---
+
+## Context Management
+
+Agentic Programming has two context modes. GUI Harness uses **Session Mode** by default:
+
+### Session Mode (default for OpenClaw)
+
+```python
+@agentic_function(summarize={"depth": 0, "siblings": 0})
+def observe(task, runtime=None):
+    # Only sends THIS call's data to the LLM.
+    # OpenClaw session remembers everything from prior calls.
+    return runtime.exec(content=[...])
+```
+
+- `summarize={"depth": 0, "siblings": 0}` → skip Context tree injection
+- The LLM session (OpenClaw/Claude Code) keeps its own conversation history
+- No redundant context duplication
+
+### API Mode (for stateless API calls)
+
+```python
+@agentic_function  # summarize=None → full context injection
+def observe(task, runtime=None):
+    # Injects all prior calls' results into the LLM prompt.
+    # Needed for stateless API calls (Anthropic/OpenAI).
+    return runtime.exec(content=[...])
+```
+
+To switch to API mode, remove `summarize={"depth": 0, "siblings": 0}` from the decorators in `gui_harness/functions/`.
+
+---
+
+## All Functions
+
+| Function | LLM? | Decorator | Description |
+|----------|-------|-----------|-------------|
+| `observe()` | Yes | `summarize={d:0,s:0}` | Screenshot + OCR + detection + LLM analysis |
+| `act()` | Yes | `summarize={d:0,s:0}` | Find target + execute click/type |
+| `verify()` | Yes | `summarize={d:0,s:0}` | Check if action succeeded |
+| `learn()` | Yes | `summarize={d:0,s:0}` | Label UI components |
+| `navigate()` | No* | `compress=True` | BFS state graph navigation |
+| `remember()` | No | — | Manage visual memory |
+| `send_message()` | No* | `compress=True` | observe → navigate → type → verify |
+| `read_messages()` | No* | `compress=True` | navigate → observe |
+
+\* Calls other functions internally which call the LLM.
+
+`compress=True` hides internal sub-steps from `summarize()` — callers only see the final result.
+
+---
 
 ## File Structure
 
 ```
 gui_harness/
 ├── __init__.py              # from gui_harness import observe, act, ...
-├── runtime.py               # GUIRuntime → OpenClaw gateway
-├── functions/
-│   ├── observe.py           # @agentic_function — screenshot + OCR + LLM
-│   ├── act.py               # @agentic_function — find + execute
-│   ├── verify.py            # @agentic_function — verify result
-│   ├── learn.py             # @agentic_function — learn UI
-│   ├── navigate.py          # @agentic_function(compress) — state graph
-│   └── remember.py          # @agentic_function — memory ops
-├── tasks/
-│   ├── send_message.py      # @agentic_function(compress)
-│   └── read_messages.py     # @agentic_function(compress)
-├── primitives/
+├── runtime.py               # GUIRuntime (auto-detect provider)
+│
+├── functions/               # @agentic_function decorated
+│   ├── observe.py           # screenshot + OCR + LLM analysis
+│   ├── act.py               # find target + execute action
+│   ├── verify.py            # verify action result
+│   ├── learn.py             # learn app UI components
+│   ├── navigate.py          # BFS state graph (compress=True)
+│   └── remember.py          # memory management
+│
+├── tasks/                   # High-level composite tasks
+│   ├── send_message.py      # observe → navigate → type → verify
+│   └── read_messages.py     # navigate → observe
+│
+├── primitives/              # Pure Python (no LLM, no decorator)
 │   ├── screenshot.py        # → scripts/platform_input
 │   ├── ocr.py               # → scripts/ui_detector
 │   ├── detector.py          # → scripts/ui_detector
 │   ├── input.py             # → scripts/platform_input
 │   ├── template_match.py    # → scripts/template_match
-│   └── vm_adapter.py        # VM monkey-patch
+│   └── vm_adapter.py        # VM monkey-patch for OSWorld
+│
 agentic/                     # Bundled Agentic Programming library
 ```
