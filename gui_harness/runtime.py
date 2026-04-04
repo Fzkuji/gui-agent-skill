@@ -50,13 +50,16 @@ Rules:
 def _detect_provider() -> tuple[str, str]:
     """Auto-detect the best available provider.
 
-    Priority: Claude Code CLI > Anthropic API > OpenAI API.
-    Claude Code CLI is preferred because it uses your subscription
-    (no per-token cost). API providers are fallbacks.
+    Priority: OpenClaw > Claude Code CLI > Anthropic API > OpenAI API.
+    OpenClaw is preferred because it uses your existing OpenClaw setup
+    (no extra cost, no separate API keys).
 
     Returns (provider_name, default_model).
     """
-    # Prefer Claude Code CLI — uses subscription, no per-token cost
+    # Prefer OpenClaw — uses your existing OpenClaw config, no extra cost
+    if shutil.which("openclaw"):
+        return "openclaw", "default"
+    # Claude Code CLI — uses subscription, no per-token cost
     if shutil.which("claude"):
         return "claude-code", "sonnet"
     # Fallback to API providers (expensive)
@@ -66,12 +69,12 @@ def _detect_provider() -> tuple[str, str]:
         return "openai", "gpt-4o"
     raise RuntimeError(
         "No LLM provider found. Options (in order of preference):\n"
-        "  1. Install Claude Code CLI (recommended, uses subscription):\n"
+        "  1. Install OpenClaw (recommended):\n"
+        "     https://github.com/openclaw/openclaw\n"
+        "  2. Install Claude Code CLI (uses subscription):\n"
         "     npm install -g @anthropic-ai/claude-code && claude login\n"
-        "  2. Set ANTHROPIC_API_KEY (API, pay per token)\n"
-        "  3. Set OPENAI_API_KEY (API, pay per token)\n"
-        "\n"
-        "OpenClaw users: Claude Code CLI is usually already installed."
+        "  3. Set ANTHROPIC_API_KEY (API, pay per token)\n"
+        "  4. Set OPENAI_API_KEY (API, pay per token)"
     )
 
 
@@ -115,7 +118,9 @@ class GUIRuntime(Runtime):
         use_system = system or GUI_SYSTEM_PROMPT
 
         # Create the actual provider runtime
-        if detected_provider == "anthropic":
+        if detected_provider == "openclaw":
+            self._inner = _OpenClawRuntime(model=use_model, system=use_system)
+        elif detected_provider == "anthropic":
             from agentic.providers.anthropic import AnthropicRuntime
             self._inner = AnthropicRuntime(
                 model=use_model,
@@ -151,3 +156,76 @@ class GUIRuntime(Runtime):
     ) -> str:
         """Delegate to the detected provider."""
         return self._inner._call(content, model=model, response_format=response_format)
+
+
+class _OpenClawRuntime(Runtime):
+    """
+    Routes LLM calls through `openclaw agent` CLI.
+
+    Uses your existing OpenClaw configuration — no separate API keys,
+    no per-token cost beyond what your OpenClaw setup already covers.
+    """
+
+    def __init__(self, model: str = "default", system: str = None, timeout: int = 120):
+        super().__init__(model=model)
+        self.system = system or GUI_SYSTEM_PROMPT
+        self.timeout = timeout
+        self._openclaw_path = shutil.which("openclaw")
+        self._session_id = None  # will be set on first call for continuity
+
+    def _call(
+        self,
+        content: list[dict],
+        model: str = "default",
+        response_format: Optional[dict] = None,
+    ) -> str:
+        import subprocess
+        import json
+        import uuid
+
+        # Build prompt from content blocks
+        parts = []
+        if self.system:
+            parts.append(self.system)
+            parts.append("")
+
+        for block in content:
+            if block.get("type") == "text":
+                parts.append(block["text"])
+            elif block.get("type") == "image":
+                path = block.get("path", "")
+                parts.append(f"[Attached image: {path}]")
+
+        if response_format:
+            parts.append(f"\nReturn ONLY valid JSON matching: {json.dumps(response_format)}")
+
+        prompt = "\n".join(parts)
+
+        # Assign a session ID for continuity across calls
+        if self._session_id is None:
+            self._session_id = str(uuid.uuid4())
+
+        cmd = [
+            self._openclaw_path, "agent",
+            "--message", prompt,
+            "--session-id", self._session_id,
+            "--json",
+        ]
+
+        result = subprocess.run(
+            cmd, capture_output=True, text=True,
+            timeout=self.timeout, env=os.environ,
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"openclaw agent failed (exit {result.returncode}): "
+                f"{result.stderr.strip() or result.stdout.strip()}"
+            )
+
+        # Parse JSON output
+        try:
+            data = json.loads(result.stdout.strip())
+            return data.get("reply", data.get("message", result.stdout.strip()))
+        except json.JSONDecodeError:
+            return result.stdout.strip()
