@@ -618,161 +618,29 @@ def merge_similar_states(states, transitions, threshold=0.85):
     return states, transitions
 
 
-# Tracker integration (auto-tick operations when tracker is active)
-_TRACKER_STATE = SKILL_DIR / "skills" / "gui-report" / "scripts" / ".tracker_state.json"
+# Tracker stubs — the old skills/gui-report tracker has been removed.
+# These are no-ops retained for backward compatibility with code that
+# calls them from learn_from_screenshot and other functions.
 
 def _tracker_auto_tick(counter, n=1):
-    """Auto-tick tracker counter. Auto-starts tracker if not running."""
-    try:
-        tracker_scripts = str(SKILL_DIR / "skills" / "gui-report" / "scripts")
-        if tracker_scripts not in sys.path:
-            sys.path.insert(0, tracker_scripts)
-        from tracker import tick_counter, STATE_FILE
-        # Auto-start tracker if not running
-        if not STATE_FILE.exists():
-            _tracker_auto_start()
-        tick_counter(counter, n)
-    except Exception:
-        pass  # Never fail — tracking is best-effort
-
+    """No-op: tracker removed in Phase 0-5 refactor."""
+    pass
 
 def _tracker_auto_start():
-    """Auto-start tracker on first detection call.
-
-    Task name starts as 'auto', updated by learn_from_screenshot
-    with app_name + domain on first call.
-    """
-    try:
-        tracker_scripts = str(SKILL_DIR / "skills" / "gui-report" / "scripts")
-        if tracker_scripts not in sys.path:
-            sys.path.insert(0, tracker_scripts)
-        from tracker import _read_tokens, STATE_FILE, COUNTERS
-        import json as _json
-        tokens = _read_tokens()
-        state = {
-            "task": "auto",
-            "start_time": time.time(),
-            "session_key": tokens["sessionKey"] if tokens else None,
-            "tokens_start": tokens,
-            "notes": [],
-        }
-        # Initialize all counters to 0
-        for c in COUNTERS:
-            state[c] = 0
-        with open(STATE_FILE, "w") as f:
-            _json.dump(state, f)
-    except Exception:
-        pass
-
+    """No-op: tracker removed in Phase 0-5 refactor."""
+    pass
 
 def _tracker_update_task(name):
-    """Update tracker task name. Called by learn_from_screenshot."""
-    try:
-        tracker_scripts = str(SKILL_DIR / "skills" / "gui-report" / "scripts")
-        if tracker_scripts not in sys.path:
-            sys.path.insert(0, tracker_scripts)
-        from tracker import update_task_name
-        update_task_name(name)
-    except Exception:
-        pass
-
-
-def task_report(task_name=None):
-    """Print final task report. Call once at end of task.
-    
-    Fully automatic — reads token usage from sessions.json,
-    operation counts from auto-ticked tracker state.
-    No LLM involvement needed.
-    
-    Args:
-        task_name: Override the auto-generated task name
-    """
-    try:
-        tracker_scripts = str(SKILL_DIR / "skills" / "gui-report" / "scripts")
-        if tracker_scripts not in sys.path:
-            sys.path.insert(0, tracker_scripts)
-        from tracker import STATE_FILE, _read_tokens, _fmt, LOG_DIR, LOG_FILE, COUNTERS
-        import json as _json
-
-        if not STATE_FILE.exists():
-            print("⚠ No task data to report.")
-            return
-
-        with open(STATE_FILE) as f:
-            state = _json.load(f)
-
-        if task_name:
-            state["task"] = task_name
-
-        elapsed = time.time() - state["start_time"]
-        tokens_now = _read_tokens(state.get("session_key"))
-        tokens_start = state.get("tokens_start", {})
-
-        total_start = tokens_start.get("totalTokens", 0) if tokens_start else 0
-        total_end = tokens_now.get("totalTokens", 0) if tokens_now else 0
-        token_delta = total_end - total_start
-
-        input_start = tokens_start.get("inputTokens", 0) if tokens_start else 0
-        input_end = tokens_now.get("inputTokens", 0) if tokens_now else 0
-        output_start = tokens_start.get("outputTokens", 0) if tokens_start else 0
-        output_end = tokens_now.get("outputTokens", 0) if tokens_now else 0
-        cache_start = tokens_start.get("cacheRead", 0) if tokens_start else 0
-        cache_end = tokens_now.get("cacheRead", 0) if tokens_now else 0
-
-        time_str = f"{elapsed:.1f}s" if elapsed < 60 else (f"{elapsed/60:.1f}min" if elapsed < 3600 else f"{elapsed/3600:.1f}h")
-
-        ops = []
-        for key in COUNTERS:
-            v = state.get(key, 0)
-            if v > 0:
-                ops.append(f"{v}×{key}")
-
-        print("=" * 60)
-        print(f"📊 GUI Task Report: {state['task']}")
-        print("=" * 60)
-        print(f"⏱  Duration:    {time_str}")
-        print(f"🪙 Tokens:      {_fmt(total_start)} → {_fmt(total_end)} (+{_fmt(token_delta)})")
-        print(f"   Input:       +{_fmt(input_end - input_start)}")
-        print(f"   Output:      +{_fmt(output_end - output_start)}")
-        print(f"   Cache read:  +{_fmt(cache_end - cache_start)}")
-        print(f"🔧 Operations:  {', '.join(ops) if ops else 'none'}")
-        print("=" * 60)
-
-        # Save to log
-        LOG_DIR.mkdir(parents=True, exist_ok=True)
-        log_entry = {
-            "task": state["task"],
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "duration_s": round(elapsed, 1),
-            "tokens_start": total_start, "tokens_end": total_end,
-            "tokens_delta": token_delta,
-            "input_delta": input_end - input_start,
-            "output_delta": output_end - output_start,
-            "cache_read_delta": cache_end - cache_start,
-            "operations": {k: state.get(k, 0) for k in COUNTERS},
-        }
-        with open(LOG_FILE, "a") as f:
-            f.write(_json.dumps(log_entry) + "\n")
-
-        STATE_FILE.unlink(missing_ok=True)
-        return log_entry
-
-    except Exception as e:
-        print(f"⚠ Report failed: {e}")
-        return None
+    """No-op: tracker removed in Phase 0-5 refactor."""
+    pass
 
 def _tracker_tick(counter, n=1):
-    """Increment a tracker counter if tracker is active. No-op otherwise."""
-    try:
-        if not _TRACKER_STATE.exists():
-            return
-        with open(_TRACKER_STATE) as f:
-            state = json.load(f)
-        state[counter] = state.get(counter, 0) + n
-        with open(_TRACKER_STATE, "w") as f:
-            json.dump(state, f)
-    except Exception:
-        pass  # Never break main flow for tracking
+    """No-op: tracker removed in Phase 0-5 refactor."""
+    pass
+
+def task_report(task_name=None):
+    """No-op: tracker removed in Phase 0-5 refactor."""
+    return None
 
 
 # ═══════════════════════════════════════════

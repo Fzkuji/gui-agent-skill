@@ -391,31 +391,6 @@ def detect_all(img_path: str, conf: float = 0.1, iou: float = 0.3):
 
     merged = merge_elements(icons, texts)
 
-    # Auto-tick tracker (best-effort, never fail)
-    try:
-        _SKILL_DIR = Path(__file__).parent.parent.parent
-        _report_dir = str(_SKILL_DIR / "skills" / "gui-report" / "scripts")
-        if _report_dir not in sys.path:
-            sys.path.insert(0, _report_dir)
-        from tracker import tick_counter, STATE_FILE, LAST_REPORT_FILE
-        if not STATE_FILE.exists():
-            if LAST_REPORT_FILE.exists():
-                try:
-                    print(LAST_REPORT_FILE.read_text().strip())
-                    LAST_REPORT_FILE.unlink()
-                except Exception:
-                    pass
-            from tracker import start as _start
-            class _Args:
-                task = "auto"
-                session = None
-            _start(_Args())
-        tick_counter("detector_calls")
-        if texts:
-            tick_counter("ocr_calls")
-    except Exception:
-        pass
-
     return icons, texts, merged, img_w, img_h
 
 
