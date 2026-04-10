@@ -11,7 +11,7 @@
 | ⏳ Pending eval | 28 |
 | ❌ Blocked | 21 |
 | 🔲 Not yet attempted | 18 |
-| **Verified score** | **29.232/34 ≈ 85.9%** |
+| **Verified score** | **30.232/35 ≈ 86.4%** |
 
 > Scores are ONLY from OSWorld official evaluator (`desktop_env/evaluators/`).
 
@@ -90,7 +90,7 @@
 | 69 | `a503b07f` | Receipt image to PDF | **1.0** (Opus) | ✅ 收据图片转PDF。2步60秒。 |
 | 70 | `09a37c51` | Edit image (remove background) | **0.901** (Opus) | ⚠️ 图片编辑（去背景），大部分正确。 |
 | 71 | `3e3fc409` | Movie records analysis | **0.96** (Opus) | ⚠️ 官方eval=0.0（精确匹配）。实际：10/10电影全对，8/10评分一致，表头/年份/行数全对。差异来自IMDB实时数据变化（Dark Knight 9.0→9.1, Cuckoo's Nest 8.7→8.6）+ 描述文本更新，非agent错误。GUI滚动提取+general写Excel流程正确。 |
-| 72 | `f5c13cdd` | Email tuition reminder | **0.0** (Opus) | ❌ 读取了未缴费学生信息，但邮件发送/格式不符evaluator要求 |
+| 72 | `f5c13cdd` | Email tuition reminder | **1.0** (Opus) | ✅ general读xlsx被post-check误杀→转GUI操作Thunderbird：点击To字段+输入4个邮箱。7步129秒。 |
 | 73 | `5990457f` | Yann LeCun Google Scholar | **0.0** (Opus) | ❌ 成功获取Yann LeCun数据并写入xlsx，但数据不匹配 |
 | 74 | `415ef462` | AWS invoice extraction | **N/A** | ❌ Evaluator报错（AssertionError），HuggingFace下载gold文件SSL失败 |
 | 75 | `7ff48d5b` | Macau travel info | **0.0** (Opus) | ❌ 需要搜索深圳自助签注机地址，写入docx。数据不匹配 |
