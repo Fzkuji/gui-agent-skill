@@ -23,16 +23,16 @@
 | 2 | `2c9fc0de` | Push git changes | **1.0** | Terminal执行git add/commit/push到origin main |
 | 3 | `2fe4b718` | Create animated GIF from video | **0.845** | ffmpeg截取视频转GIF，帧率/尺寸与gold略有差异 |
 | 4 | `3680a5ee` | Merge xlsx/ods columns to CSV | **1.0** | openpyxl+odfpy读取两列，csv.writer合并，LO Calc从terminal打开 |
-| 5 | `46407397` | Export charts from docx | | |
-| 6 | `4e9f0faf` | Extract invoice table | | |
+| 5 | `46407397` | Export charts from docx | **N/A** | ❌ Blocked: 需要Google Drive API credentials |
+| 6 | `4e9f0faf` | Extract invoice table | **N/A** | ❌ Blocked: 需要Google Drive API credentials |
 | 7 | `510f64c8` | Start VS Code from terminal | **0.0** | VS Code已打开project，但eval extension未激活(activationEvents为空) |
 | 8 | `51f5801c` | Extract Impress notes to docx | **1.0** | python-pptx提取notes + python-docx保存，ignore_blanks |
 | 9 | `58565672` | Open email link in Chrome | **N/A** | 需要外网访问amazon.com，VM网络503 |
-| 10 | `78aed49a` | Save email attachments | | |
-| 11 | `897e3b53` | Convert docx form | | |
+| 10 | `78aed49a` | Save email attachments | **N/A** | ❌ Blocked: 需要Google Drive API credentials |
+| 11 | `897e3b53` | Convert docx form | **N/A** | ❌ Blocked: 需要Google Drive API credentials |
 | 12 | `937087b6` | Set VLC as default player | **0.0** | 部分video类型未覆盖，evaluator检查所有MIME type |
-| 13 | `a0b9dc9c` | Backup emails | | |
-| 14 | `b52b40a5` | Merge PDFs | | |
+| 13 | `a0b9dc9c` | Backup emails | **N/A** | ❌ Blocked: 需要Google Drive API credentials |
+| 14 | `b52b40a5` | Merge PDFs | **N/A** | ❌ Blocked: 需要Google Drive API credentials |
 | 15 | `c867c42d` | Export TB contacts to CSV/XLSX | **0.0** | 导出30条但gold有60条，sqlite缺少vCard解析的字段 |
 | 16 | `d9b7c649` | Extract 5 emails to report.xlsx | **1.0** | mbox解析+openpyxl导出 |
 | 17 | `e135df7c` | Convert xlsx to HTML, view in Chrome | **1.0** | libreoffice --headless转换+CDP打开tab |
