@@ -118,7 +118,7 @@
 | 97 | `5df7b33a` | Split bulky book | **0.996** | ⚠️ 分割书籍，2步116秒 |
 | 98 | `aceb0368` | Grade English exam | **1.0** | ✅ 批改选择题+写入xlsx，7步293秒 |
 | 99 | `22a4636f` | Convert docx to PDF + upload | **N/A** | ❌ Blocked: 需要Google Drive API credentials（settings.yml + settings.json），setup第一步失败 |
-| 100 | `236833a3` | HuggingFace daily paper list | | |
+| 100 | `236833a3` | HuggingFace daily paper list | **0.0** | ❌ 11篇论文都找到了但顺序和gold不同，PDF链接格式差异(pdf/ vs abs/)，标题多余空格 |
 | 101 | `67890eb6` | ACL best paper awards | **1.0** | ✅ 爬取ACL 2019-2023最佳长论文奖，3步286秒 |
 
 ## Legend
