@@ -1,537 +1,263 @@
 <div align="center">
-  <img src="assets/banner.png" alt="GUI Agent Skills" width="100%" />
+  <img src="assets/banner.png" alt="GUI Agent Harness" width="100%" />
 
   <br />
 
   <p>
-    <strong>Your AI can finally see the screen — and use it like a human.</strong>
+    <strong>Autonomous GUI agent — give it a task, it operates the desktop.</strong>
     <br />
-    <sub>Visual memory • One-shot UI learning • Zero hardcoded selectors</sub>
+    <sub>Visual memory &bull; One-shot UI learning &bull; Any LLM provider &bull; Local or VM</sub>
   </p>
 
   <p>
     <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-blue?style=for-the-badge" /></a>
-    <a href="https://github.com/openclaw/openclaw"><img src="https://img.shields.io/badge/OpenClaw-Required-red?style=for-the-badge" /></a>
+    <a href="https://github.com/Fzkuji/Agentic-Programming"><img src="https://img.shields.io/badge/Agentic_Programming-green?style=for-the-badge" /></a>
     <a href="https://discord.gg/vfyqn5jWQy"><img src="https://img.shields.io/badge/Discord-7289da?style=for-the-badge&logo=discord&logoColor=white" /></a>
   </p>
 
   <p>
     <img src="https://img.shields.io/badge/Platform-macOS_%7C_Linux-black?logo=apple" />
-    <img src="https://img.shields.io/badge/Runtime-OpenClaw-orange" />
+    <img src="https://img.shields.io/badge/Provider-Claude_%7C_OpenClaw_%7C_OpenAI-orange" />
     <img src="https://img.shields.io/badge/Detection-GPA--GUI--Detector-green" />
     <img src="https://img.shields.io/badge/OCR-Apple_Vision_%7C_EasyOCR-blue" />
     <img src="https://img.shields.io/badge/License-MIT-yellow" />
-    <img src="https://img.shields.io/badge/OSWorld_Chrome-93.5%25-brightgreen" />
-    <img src="https://img.shields.io/badge/OSWorld_Multi--Apps-54.3%25-green" />
+    <img src="https://img.shields.io/badge/OSWorld_Multi--Apps-79.8%25_(72.6/91)-brightgreen" />
   </p>
 </div>
 
 ---
 
-<p align="center">
-  <b>🇺🇸 English</b> ·
-  <a href="docs/README_CN.md">🇨🇳 中文</a>
-</p>
+## What is GUI Agent Harness?
 
----
+A CLI tool that turns any LLM into a GUI automation agent. You give it a natural-language task, it operates the desktop autonomously — screenshots, clicks, types, verifies, and repeats until the task is done.
 
-## 🔥 News
-
-- **[2026-04-07]** 🤖 **Agent-native architecture** — Rebuilt execution core on [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming), unifying GUI perception and free-form agent actions under a single two-step decision loop. Dramatically improves task reliability and eliminates task-specific scripting.
-- **[2026-03-30]** 📐 **ImageContext coordinate system** — Replaced dual-space model with `ImageContext` class; scale-independent cropping, fixes crop bugs on non-fullscreen images.
-- **[2026-03-29]** 🎬 **v0.3 — Unified Actions & Cross-Platform GUI** — `gui_action.py` as single entry point. Platform backends (`mac_local.py`, `http_remote.py`) auto-selected via `--remote`. OSWorld Multi-Apps: **54.3%** (44/81). [Results →](benchmarks/osworld/multi_apps.md)
-- **[2026-03-24]** 🧠 **Smart workflow navigation** — Target state verification with tiered fallback (template match → full detection → LLM).
-- **[2026-03-23]** 🏆 **OSWorld Chrome** — **93.5%** one attempt (43/46), **97.8%** two attempts (45/46). [Results →](benchmarks/osworld/)
-- **[2026-03-23]** 🔄 **Memory overhaul** — Split storage, automatic component forgetting, state merging by Jaccard similarity.
-- **[2026-03-10]** 🚀 **Initial release** — GPA-GUI-Detector + Apple Vision OCR + template matching + per-app visual memory.
-
-## 📖 Skills Overview
-
-GUI Agent Skills is organized as a **main skill** (`SKILL.md`) that orchestrates **7 specialized sub-skills**, each handling a distinct aspect of GUI automation:
-
-<div align="center">
-
-### **7 Skills Powering Visual GUI Automation**
-
-| Skill | Description |
-|:---|:---|
-| 👁️&nbsp;**[gui‑observe](skills/gui-observe/)** | Screenshot capture, OCR text extraction, current state identification. The agent's eyes — always runs first before any action. |
-| 🎓&nbsp;**[gui‑learn](skills/gui-learn/)** | First-contact app learning — detect all UI components via GPA-GUI-Detector, have the VLM label each one, filter duplicates, save to visual memory. |
-| 🖱️&nbsp;**[gui‑act](skills/gui-act/)** | Unified action execution — detect → match → execute → diff → save as one atomic flow. Handles clicks, typing, and all UI interactions. |
-| 💾&nbsp;**[gui‑memory](skills/gui-memory/)** | Visual memory management — split storage (components/states/transitions), browser site isolation, activity-based forgetting, state merging. |
-| 🔄&nbsp;**[gui‑workflow](skills/gui-workflow/)** | State graph navigation and workflow automation — record successful task sequences, replay with tiered verification, BFS path planning. |
-| 📊&nbsp;**[gui‑report](skills/gui-report/)** | Task performance tracking — automatic timing, token usage, success/failure logging for every GUI operation. |
-| ⚙️&nbsp;**[gui‑setup](skills/gui-setup/)** | First-time setup on a new machine — install dependencies, download models, configure accessibility permissions. |
-
-</div>
-
-The main `SKILL.md` acts as the orchestration layer: it defines the safety protocol (INTENT → OBSERVE → VERIFY → ACT → CONFIRM → REPORT), the vision-vs-command boundary, and routes to sub-skills as needed. The agent reads `SKILL.md` first, then loads sub-skills on demand.
-
-## 🔄 How It Works
-
-> **You**: "Send a message to John in WeChat saying see you tomorrow"
-
-```
-OBSERVE  → Screenshot, identify current state
-           ├── Current app: Finder (not WeChat)
-           └── Action: need to switch to WeChat
-
-STATE    → Check WeChat memory
-           ├── Learned before? Yes (24 components)
-           ├── OCR visible text: ["Chat", "Cowork", "Code", "Search", ...]
-           ├── State identified: "initial" (89% match)
-           └── Components for this state: 18 → use these for matching
-
-NAVIGATE → Find contact "John"
-           ├── Template match search_bar → found (conf=0.96) → click
-           ├── Paste "John" into search field (clipboard → Cmd+V)
-           ├── OCR search results → found → click
-           └── New state: "click:John" (chat opened)
-
-VERIFY   → Confirm correct chat opened
-           ├── OCR chat header → "John" ✅
-           └── Wrong contact? → ABORT
-
-ACT      → Send message
-           ├── Click input field (template match)
-           ├── Paste "see you tomorrow" (clipboard → Cmd+V)
-           └── Press Enter
-
-CONFIRM  → Verify message sent
-           ├── OCR chat area → "see you tomorrow" visible ✅
-           └── Done
-```
-
-<details>
-<summary>📖 More examples</summary>
-
-### "Scan my Mac for malware"
-
-```
-OBSERVE  → Screenshot → CleanMyMac X not in foreground → activate
-           ├── Get main window bounds (largest window, skip status bar panels)
-           └── OCR window content → identify current state
-
-STATE    → Check memory for CleanMyMac X
-           ├── OCR visible text: ["Smart Scan", "Malware Removal", "Privacy", ...]
-           ├── State identified: "initial" (92% match)
-           └── Know which components to match: 21 components
-
-NAVIGATE → Click "Malware Removal" in sidebar
-           ├── Find element in window (exact match, filter by window bounds)
-           ├── Click → new state: "click:Malware_Removal"
-           └── OCR confirms new state (87% match)
-
-ACT      → Click "Scan" button
-           ├── Find "Scan" (exact match, bottom position — prevents matching "Deep Scan")
-           └── Click → scan starts
-
-POLL     → Wait for completion (event-driven, no fixed sleep)
-           ├── Every 2s: screenshot → OCR check for "No threats"
-           └── Target found → proceed immediately
-
-CONFIRM  → "No threats found" ✅
-```
-
-### "Check if my GPU training is still running"
-
-```
-OBSERVE  → Screenshot → Chrome is open
-           └── Identify target: JupyterLab tab
-
-NAVIGATE → Find JupyterLab tab in browser
-           ├── OCR tab bar or use bookmarks
-           └── Click to switch
-
-EXPLORE  → Multiple terminal tabs visible
-           ├── Screenshot terminal area
-           ├── LLM vision analysis → identify which tab has nvitop
-           └── Click the correct tab
-
-READ     → Screenshot terminal content
-           ├── LLM reads GPU utilization table
-           └── Report: "8 GPUs, 7 at 100% — experiment running" ✅
-```
-
-### "Kill GlobalProtect via Activity Monitor"
-
-```
-OBSERVE  → Screenshot current state
-           └── Neither GlobalProtect nor Activity Monitor in foreground
-
-ACT      → Launch both apps
-           ├── open -a "GlobalProtect"
-           └── open -a "Activity Monitor"
-
-EXPLORE  → Screenshot Activity Monitor window
-           ├── LLM vision → "Network tab active, search field empty at top-right"
-           └── Decide: click search field first
-
-ACT      → Search for process
-           ├── Click search field (identified by explore)
-           ├── Paste "GlobalProtect" (clipboard → Cmd+V, never cliclick type)
-           └── Wait for filter results
-
-VERIFY   → Process found in list → select it
-
-ACT      → Kill process
-           ├── Click stop button (X) in toolbar
-           └── Confirmation dialog appears
-
-VERIFY   → Click "Force Quit"
-
-CONFIRM  → Screenshot → process list empty → terminated ✅
-```
-
-</details>
-
-## 📋 Prerequisites
-
-GUI Agent Skills is an **OpenClaw skill** — it runs inside [OpenClaw](https://github.com/openclaw/openclaw) and uses OpenClaw's LLM orchestration to reason about UI actions. It is **not** a standalone API, CLI tool, or Python library. You need:
-
-1. **[OpenClaw](https://github.com/openclaw/openclaw)** installed and running
-2. **macOS with Apple Silicon** *(recommended)* — enables Apple Vision OCR for high-accuracy text detection. Also supports **Linux** (local or remote VMs via HTTP API, e.g., OSWorld).
-3. **Accessibility permissions** granted to OpenClaw/Terminal (macOS only)
-
-The LLM (Claude, GPT, etc.) is provided by your OpenClaw configuration — GUI Agent Skills itself does not call any external APIs directly.
-
-## 🚀 Quick Start
-
-**1. Clone & install**
 ```bash
-git clone https://github.com/Fzkuji/GUI-Agent-Skills.git
-cd GUI-Agent-Skills
-bash scripts/setup.sh
+gui-agent "Install the Orchis GNOME theme"
+gui-agent --vm http://172.16.82.132:5000 "Open GitHub in Chrome and Python docs"
 ```
 
-**2. Grant accessibility permissions**
+**Designed as an LLM tool.** The intended workflow is:
+1. An LLM (Claude Code, OpenClaw, etc.) receives a GUI task from the user
+2. The LLM's skill/prompt tells it to call `gui-agent` as a CLI tool
+3. `gui-agent` handles all GUI perception and interaction internally
+4. The LLM gets back a result summary
 
-System Settings → Privacy & Security → Accessibility → Add Terminal / OpenClaw
+The LLM doesn't need to know how GUI automation works — it just calls the tool.
 
-**3. Configure OpenClaw**
+## Key Ideas
 
-Add to `~/.openclaw/openclaw.json`:
-```json
-{
-  "skills": { "entries": { "gui-agent": { "enabled": true } } },
-  "tools": { "exec": { "timeoutSec": 300 } }
-}
-```
+- **Visual memory** — UI components are detected once, labeled by a VLM, and stored as templates. On subsequent encounters, template matching replaces expensive re-detection (~5x faster, ~60x fewer tokens).
+- **State transitions** — The UI is modeled as a graph of states (sets of visible components). Successful action sequences are recorded as transitions for future replay.
+- **4-phase step loop** — Each step follows: Observe (screenshot + detect) → Verify (check previous action) → Plan (LLM decides next action) → Dispatch (execute). All phases are `@agentic_function` calls with structured feedback between steps.
+- **Provider-agnostic** — Works with Claude Code CLI, OpenClaw, Anthropic API, or OpenAI API. Auto-detects the best available provider.
 
-> ⚠️ **`timeoutSec: 300`** is important — GUI Agent Skills operation chains (screenshot → detect → click → wait → verify) can take a while. A 5-minute timeout is recommended. The default is too short and will kill commands mid-execution.
+## OSWorld Results
 
-Then just chat with your OpenClaw agent — it reads `SKILL.md` and handles everything automatically.
+**Multi-Apps domain: 79.8% (72.6/91 evaluated tasks)**
 
-## 🏗️ Architecture
+| Metric | Value |
+|--------|-------|
+| Total tasks | 101 |
+| Evaluated | 91 |
+| Blocked (no credentials) | 10 |
+| Passed (score = 1.0) | 63 |
+| Partial (0 < score < 1.0) | 11 |
 
-<p align="center">
-  <img src="assets/architecture.png" alt="GUI Agent Skills Architecture" width="700" />
-</p>
+Full results: [benchmarks/osworld/multi_apps.md](benchmarks/osworld/multi_apps.md)
 
-GUI Agent Skills transforms GUI agents from **stateless** (re-perceive everything every step) to **stateful** (learn, remember, reuse) through three core mechanisms:
+## Quick Start
 
-### 1. Unified Component Memory
-
-> **Problem**: Existing GUI agents treat every screenshot as a fresh perception task — even on interfaces they've seen hundreds of times before.
-
-When a UI element is first detected, GUI Agent Skills creates a **dual representation**: a cropped visual template (for fast matching) and a VLM-assigned semantic label (for reasoning). This pair is stored in per-app memory and reused across all future interactions.
-
-**Detection and annotation:**
-- [GPA-GUI-Detector](https://huggingface.co/Salesforce/GPA-GUI-Detector) (YOLO-based) detects UI components → bounding boxes with coordinates, but *no semantic labels*
-- Apple Vision OCR extracts visible text with precise bounding boxes
-- VLM (Claude, GPT, etc.) assigns semantic labels to each detected element ("Search button", "Settings icon")
-- Result: each component carries both a **visual template** and a **semantic label**
-
-**Template matching and reuse:**
-- On subsequent screenshots, stored templates are matched via normalized cross-correlation
-- Matches are validated against the target application's window bounds (prevents false positives from overlapping apps)
-- Matched components carry their previously-assigned labels — no VLM needed
-
-**Activity-based forgetting:**
-- Each component tracks `consecutive_misses` — incremented when a full detection cycle fails to re-detect it
-- After **15 consecutive misses**, the component is automatically removed (cascades through states and transitions)
-- Keeps memory aligned with the app's current UI as it updates over time
-
-```
-memory/apps/
-├── wechat/
-│   ├── meta.json              # Metadata (detect_count, forget_threshold)
-│   ├── components.json        # Component registry + activity tracking
-│   ├── states.json            # States defined by component sets
-│   ├── transitions.json       # State transitions (dict, deduped)
-│   ├── components/            # Cropped UI element images
-│   │   ├── search_bar.png
-│   │   └── emoji_button.png
-│   └── workflows/             # Saved task sequences
-├── chromium/
-│   ├── components.json        # Browser UI components
-│   └── sites/                 # ⭐ Per-website memory (same structure)
-│       ├── united.com/
-│       ├── delta.com/
-│       └── amazon.com/
-```
-
-### 2. Component-Based State Transition Modeling
-
-> **Problem**: Knowing "what's on screen" isn't enough — the agent also needs to know "what happens when I click X."
-
-The UI is modeled as a **directed graph of states**, where each state is defined by a set of visible components.
-
-**State definition and matching:**
-- A state `s = {c₁, c₂, ..., cₙ}` is the set of components currently on screen
-- States are matched using **Jaccard similarity**: `J(s, s') = |s ∩ s'| / |s ∪ s'|`
-- Match threshold > 0.7 → identifies current state
-- Merge threshold > 0.85 → similar states auto-merge (prevents state explosion)
-
-**Transition recording with pending-confirm validation:**
-- Each click records a transition tuple: `(state_before, component_clicked, state_after)`
-- Transitions are **not** immediately committed — they accumulate as *pending*
-- Only when a task **succeeds** are all pending transitions confirmed and written to the graph
-- On failure → all pending transitions are discarded (prevents exploratory clicks from polluting the graph)
-
-**BFS path planning:**
-- The accumulated transitions form a directed graph `G = (S, E)`
-- Given current state `sᶜ` and target state `sᵗ`, BFS finds the shortest action sequence
-- Enables direct navigation to any previously-visited state without re-exploration
-- No path exists? → falls back to exploration mode with VLM reasoning
-
-```json
-// states.json
-{
-  "state_0": {
-    "defining_components": ["Chat_tab", "Cowork_tab", "Search", "Ideas"],
-    "description": "Main app view"
-  },
-  "state_1": {
-    "defining_components": ["Chat_tab", "Account", "Billing", "Usage"],
-    "description": "Settings page"
-  }
-}
-
-// transitions.json — click Settings in state_0 → arrive at state_1
-{
-  "state_0": { "Settings": "state_1" },
-  "state_1": { "Chat_tab": "state_0" }
-}
-```
-
-### 3. Progressive Visual-to-Semantic Grounding
-
-> **Problem**: VLMs hallucinate coordinates. Every existing GUI agent asks the VLM to estimate pixel positions — leading to misclicks and cascading failures.
-
-GUI Agent Skills **progressively shifts** from image-level to text-level grounding as memory accumulates:
-
-**Phase 1 — Image-level grounding (unfamiliar interfaces):**
-- Detector provides bounding boxes, OCR extracts text
-- VLM receives the full screenshot to understand the scene
-- VLM decides which element to interact with
-- Components are annotated and saved to memory
-- This expensive process happens **only once per component**
-
-**Phase 2 — Text-level grounding (familiar interfaces):**
-- Template matching identifies known components on screen
-- VLM receives a **list of component names** (e.g., `[Search, Settings, Profile, Chat]`) — *not* a screenshot
-- VLM selects a target by name (e.g., "click Settings")
-- System resolves the name to precise coordinates via the stored template
-- **The VLM never estimates pixel positions**
-
-**Why this matters:**
-1. **No coordinate hallucination** — coordinates come exclusively from template matching
-2. **No redundant visual processing** — familiar interfaces are handled in pure text space
-3. **Decreasing cost over time** — as memory grows, more interactions use text-level grounding, reducing both latency (~5.3× faster) and token consumption (~60-100× fewer tokens per step)
-
-**Hierarchical verification** during workflow execution:
-
-| Level | Method | Speed | When |
-|-------|--------|-------|------|
-| **Level 0** | Template match target component | ~0.3s | Default first check |
-| **Level 1** | Full detection + state identification | ~2s | Level 0 fails or ambiguous |
-| **Level 2** | VLM vision fallback | ~5s+ | Level 1 can't determine state |
-
-### Detection Stack
-
-| Detector | Speed | Finds |
-|----------|-------|-------|
-| **[GPA-GUI-Detector](https://huggingface.co/Salesforce/GPA-GUI-Detector)** | ~0.3s | Icons, buttons, input fields |
-| **Apple Vision OCR** | ~1.6s | Text elements (CN + EN) |
-| **Template Match** | ~0.3s | Known components (after first learn) |
-
-## 🔴 Vision vs Command
-
-GUI Agent Skills uses visual detection for **decisions** and the most efficient method for **execution**:
-
-| | Must be vision-based | May use keyboard/CLI |
-|---|---|---|
-| **What** | Determining state, locating elements, verifying results | Shortcuts (Ctrl+L), text input, system commands |
-| **Why** | The agent must SEE what's on screen before acting | Execution can use the fastest available method |
-| **Rule** | **Decision = Visual, Execution = Best Tool** | |
-
-### Three Visual Methods
-
-| Method | Returns | Use for |
-|--------|---------|---------|
-| **OCR** (`detect_text`) | Text + coordinates ✅ | Finding text labels, links, menu items |
-| **GPA-GUI-Detector** (`detect_icons`) | Bounding boxes + coordinates ✅ (no labels) | Finding icons, buttons, non-text elements |
-| **image tool** (LLM vision) | Semantic understanding ⛔ NO coordinates | Understanding the scene, deciding WHAT to click |
-
-## 🛡️ Safety & Protocol
-
-Every action follows a unified detect-match-execute-save protocol:
-
-| Step | What | Why |
-|------|------|-----|
-| **DETECT** | Screenshot + OCR + GPA-GUI-Detector | Know what's on screen with coordinates |
-| **MATCH** | Compare against saved memory components | Reuse learned elements (skip re-detection) |
-| **DECIDE** | LLM picks target element | Visual understanding drives decisions |
-| **EXECUTE** | Click detected coordinates / keyboard shortcut | Act using best tool |
-| **DETECT AGAIN** | Screenshot + OCR + GPA-GUI-Detector after action | See what changed |
-| **DIFF** | Compare before vs after (appeared/disappeared/persisted) | Understand state transition |
-| **SAVE** | Update memory: components, labels, transitions, pages | Learn for future reuse |
-
-**Safety rules enforced in code:**
-- ✅ Verify chat recipient before sending messages (OCR header)
-- ✅ Window-bounded operations (no clicking outside target app)
-- ✅ Exact text matching (prevents "Scan" matching "Deep Scan")
-- ✅ Largest-window detection (skips status bar panels for multi-window apps)
-- ✅ No blind clicks after timeout — screenshot + inspect instead
-- ✅ Mandatory timing & token delta reporting after every task
-
-## 🧬 Agentic Programming Layer
-
-GUI Agent Harness includes `gui_harness/` — a programmatic Python interface powered by [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming).
-
-**Designed for OpenClaw.** If OpenClaw is installed, everything works out of the box:
+**1. Install**
 
 ```bash
 git clone --recurse-submodules https://github.com/Fzkuji/GUI-Agent-Harness.git
 cd GUI-Agent-Harness
-pip install -e ./libs/agentic-programming   # install Agentic Programming
-pip install -e .                            # install GUI Agent Harness
+pip install -e ./libs/agentic-programming
+pip install -e .
 ```
+
+**2. Run**
+
+```bash
+# Local desktop (macOS)
+gui-agent "Open Firefox and go to google.com"
+
+# Remote VM (OSWorld)
+gui-agent --vm http://VM_IP:5000 "Add a lecture to the timetable"
+
+# Specify provider and model
+gui-agent --provider claude-code --model opus "Send hello in WeChat"
+```
+
+**3. Use as LLM skill**
+
+Add the `SKILL.md` to your LLM's skill/prompt configuration. The skill tells the LLM when and how to call `gui-agent`. See [SKILL.md](SKILL.md).
+
+## CLI Options
+
+```
+gui-agent [OPTIONS] TASK
+
+Arguments:
+  TASK                  Natural language task description
+
+Options:
+  --vm URL              Remote VM HTTP API (e.g., http://172.16.82.132:5000)
+  --provider NAME       Force LLM provider: claude-code, openclaw, anthropic, openai
+  --model NAME          Override model name (e.g., opus, sonnet, gpt-4o)
+  --max-steps N         Max actions before stopping (default: 15)
+  --app NAME            App name for component memory (default: desktop)
+```
+
+## Architecture
+
+```
+gui-agent "task description"
+    │
+    ▼
+gui_agent()                    ← @agentic_function, drives the loop
+    │
+    ├── for step in 1..max_steps:
+    │       │
+    │       ▼
+    │   gui_step()             ← @agentic_function, orchestration
+    │       │
+    │       ├── 1. Observe     (Python) — screenshot + detect + match + state ID
+    │       ├── 2. Verify      (LLM)   — check previous action's result
+    │       ├── 3. Plan        (LLM)   — decide next action
+    │       └── 4. Dispatch    (Python) — execute: click/type/scroll/general
+    │       │
+    │       ▼
+    │   build_step_feedback()  ← structured result → next iteration
+    │
+    └── return result summary
+```
+
+**Observe** — Pure Python. Takes a screenshot, runs GPA-GUI-Detector + OCR, matches against stored component templates, identifies the current UI state.
+
+**Verify** — LLM call. Examines the screenshot after the previous action. Reports whether the action succeeded. Does not decide task completion.
+
+**Plan** — LLM call. Sees the screenshot, detected components, verification result, and known state transitions. Chooses one action (click, type, scroll, general, done).
+
+**Dispatch** — Pure Python. Executes the planned action. For clicks, uses template matching to find precise coordinates. For `general`, delegates to the LLM with full tool access (Bash, file I/O, etc.).
+
+## Visual Memory
+
+When a UI element is first detected, it gets a **dual representation**: a cropped visual template (for fast matching) and a VLM-assigned label (for reasoning). Stored per-app, reused across all future sessions.
+
+```
+memory/
+├── linux/                     # Platform-specific memory
+│   └── apps/
+│       ├── desktop/           # General desktop components
+│       ├── chromium/          # Browser UI
+│       │   └── sites/         # Per-website memory
+│       ├── gimp/
+│       └── libreoffice-calc/
+│           ├── components.json    # Component registry
+│           ├── states.json        # UI states (component sets)
+│           ├── transitions.json   # State graph edges
+│           └── components/        # Template images
+```
+
+**Activity-based forgetting** — Components track consecutive misses. After 15 misses, auto-removed. Keeps memory aligned with the app's current UI.
+
+**State matching** — States are sets of visible components, matched by Jaccard similarity (>0.7 = same state, >0.85 = auto-merge).
+
+## Detection Stack
+
+| Detector | Speed | Finds |
+|----------|-------|-------|
+| [GPA-GUI-Detector](https://huggingface.co/Salesforce/GPA-GUI-Detector) | ~0.3s | Icons, buttons, input fields |
+| Apple Vision OCR / EasyOCR | ~1.6s | Text elements |
+| Template Match | ~0.3s | Known components (after first detection) |
+
+## Built on Agentic Programming
+
+GUI Agent Harness is built on [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming) — a framework where Python functions with LLM-powered docstrings become autonomous agents. Each function (`verify_step`, `plan_next_action`, `general_action`) is an `@agentic_function` that calls the LLM exactly once and returns structured data.
 
 ```python
-from gui_harness import observe, act, verify
-from gui_harness.runtime import GUIRuntime
+@agentic_function(summarize={"siblings": -1})
+def plan_next_action(task, img_path, ..., runtime=None) -> dict:
+    """Decide the next action to take toward completing the task.
 
-runtime = GUIRuntime()  # auto-detects OpenClaw, zero config
-
-observe(task="find the login button", runtime=runtime)
-# → screenshot + OCR + detection + LLM analysis
-
-act(action="click", target="login button", runtime=runtime)
-# → find coordinates + click + check screen changed
-
-verify(expected="dashboard is visible", runtime=runtime)
-# → screenshot + LLM verification
+    You are a GUI automation agent. Choose one action to execute next.
+    ...
+    """
+    reply = runtime.exec(content=[
+        {"type": "text", "text": context},
+        {"type": "image", "path": img_path},
+    ])
+    return parse_json(reply)
 ```
 
-**LLM provider priority:** OpenClaw (`openclaw agent`) → Claude Code CLI → Anthropic API → OpenAI API. OpenClaw and Claude Code use your subscription (no per-token cost). API providers are pay-per-token fallbacks.
+The docstring IS the prompt. The function signature defines the interface. The framework handles context management, history summarization, and provider abstraction.
 
-**For VMs (OSWorld):** `patch_for_vm("http://VM_IP:5000")` redirects all primitives to the VM.
+## LLM Provider Priority
 
-📖 Full docs: [docs/agentic-programming.md](docs/agentic-programming.md)
+| Priority | Provider | Cost | Notes |
+|----------|----------|------|-------|
+| 1 | OpenClaw | Subscription | Auto-detected if `openclaw` CLI exists |
+| 2 | Claude Code CLI | Subscription | Auto-detected if `claude` CLI exists |
+| 3 | Anthropic API | Per-token | Requires `ANTHROPIC_API_KEY` |
+| 4 | OpenAI API | Per-token | Requires `OPENAI_API_KEY` |
 
-## 🗂️ Project Structure
+Override with `--provider` and `--model` flags.
+
+## Project Structure
 
 ```
-GUI-Agent-Skills/
-├── SKILL.md                   # 🧠 Main skill — orchestration layer
-│                              #    Safety protocol, vision-vs-command boundary,
-│                              #    routes to sub-skills as needed
-├── skills/                    # 📖 Sub-skills (7 specialized modules)
-│   ├── gui-observe/SKILL.md   #   👁️ Screenshot, OCR, identify state
-│   ├── gui-learn/SKILL.md     #   🎓 Detect components, label, filter, save
-│   ├── gui-act/SKILL.md       #   🖱️ Unified: detect→match→execute→diff→save
-│   ├── gui-memory/SKILL.md    #   💾 Memory structure, browser sites/, cleanup
-│   ├── gui-workflow/SKILL.md  #   🔄 State graph navigation, workflow replay
-│   ├── gui-report/SKILL.md    #   📊 Task performance tracking
-│   └── gui-setup/SKILL.md     #   ⚙️ First-time setup on a new machine
-├── scripts/
-│   ├── setup.sh               # 🔧 One-command setup
-│   ├── activate.py            # 🌐 Platform detection — detects OS, prints platform info
-│   ├── gui_action.py          # 🎯 Unified GUI action interface (click/type/key/screenshot)
-│   │                          #    Auto-selects backend: mac_local or http_remote via --remote
-│   ├── backends/              # 🔌 Platform-specific backends
-│   │   ├── mac_local.py       #     macOS: cliclick + AppleScript
-│   │   └── http_remote.py     #     Remote VMs: pyautogui via HTTP API (e.g., OSWorld)
-│   ├── ui_detector.py         # 🔍 Detection engine (GPA-GUI-Detector + OCR + Swift window info)
-│   ├── app_memory.py          # 🧠 Visual memory (learn/detect/click/verify/learn_site)
-│   └── template_match.py      # 🎯 Template matching utilities
-├── memory/                    # 🔒 Visual memory (gitignored but ESSENTIAL)
-│   ├── apps/<appname>/        #   Per-app memory:
-│   │   ├── meta.json          #     Metadata (detect_count, forget_threshold)
-│   │   ├── components.json    #     Component registry + activity tracking
-│   │   ├── states.json        #     States defined by component sets
-│   │   ├── transitions.json   #     State transitions (dict, deduped)
-│   │   ├── components/        #     Template images
-│   │   ├── pages/             #     Page screenshots
-│   │   └── sites/<domain>/    #   Per-website memory (browsers only, same structure)
-├── platforms/                  # 🌐 Platform-specific guides & detection
-│   ├── detect.py              #     Platform auto-detection script
-│   ├── macos.md               #     macOS-specific tips & workarounds
-│   ├── linux.md               #     Linux-specific tips & workarounds
-│   └── DESIGN.md              #     Cross-platform architecture design
-├── benchmarks/osworld/        # 📈 OSWorld benchmark results
-├── assets/                    # 🎨 Architecture diagrams, banners
-├── actions/
-│   ├── _actions_macos.yaml    # 📋 macOS-specific action definitions
-│   └── _actions_linux.yaml    # 📋 Linux-specific action definitions
-├── docs/
-│   ├── core.md                # 📚 Lessons learned & hard-won rules
-│   └── README_CN.md           # 🇨🇳 中文文档
-├── LICENSE                    # 📄 MIT
-└── requirements.txt
+GUI-Agent-Harness/
+├── gui_harness/
+│   ├── main.py                # CLI entry point + gui_agent loop
+│   ├── runtime.py             # LLM provider auto-detection
+│   ├── tasks/
+│   │   └── execute_task.py    # 4-phase step: observe → verify → plan → dispatch
+│   ├── action/
+│   │   ├── input.py           # Mouse/keyboard primitives
+│   │   └── general_action.py  # Free-form LLM action with tool access
+│   ├── perception/
+│   │   └── screenshot.py      # Screenshot capture (local + VM)
+│   ├── planning/
+│   │   ├── component_memory.py  # Template matching + state management
+│   │   └── learn.py           # First-time app component learning
+│   ├── memory/                # Memory management utilities
+│   └── adapters/
+│       └── vm_adapter.py      # Redirect all I/O to remote VM
+├── libs/
+│   └── agentic-programming/   # Agentic Programming framework (submodule)
+├── benchmarks/
+│   └── osworld/               # OSWorld benchmark runner + results
+├── memory/                    # Visual memory storage (per-platform, per-app)
+├── SKILL.md                   # LLM skill definition for gui-agent
+└── pyproject.toml
 ```
 
-## 📦 Requirements
+## Requirements
 
-- **macOS** with Apple Silicon (M1/M2/M3/M4) — for local GUI automation
-- **Linux** (Ubuntu 22.04+) — for remote VM automation via HTTP API
-- **Accessibility permissions** (macOS only): System Settings → Privacy → Accessibility
-- Everything else installed by `bash scripts/setup.sh`
+- **Python 3.12+**
+- **macOS** (Apple Silicon recommended for Vision OCR) or **Linux**
+- At least one LLM provider (Claude Code CLI, OpenClaw, or API key)
+- For VM automation: OSWorld or compatible HTTP API
 
-## 🤝 Ecosystem
-
-| | |
-|---|---|
-| 🦞 **[OpenClaw](https://github.com/openclaw/openclaw)** | AI assistant framework — loads GUI Agent Skills as a skill |
-| 🔍 **[GPA-GUI-Detector](https://huggingface.co/Salesforce/GPA-GUI-Detector)** | Salesforce/GPA-GUI-Detector — general-purpose UI element detection model |
-| 💬 **[Discord Community](https://discord.gg/vfyqn5jWQy)** | Get help, share feedback |
-
-## 📄 License
+## License
 
 MIT — see [LICENSE](LICENSE) for details.
 
----
-
-## 📌 Citation
-
-If you find GUI Agent Skills useful in your research, please cite:
+## Citation
 
 ```bibtex
-@misc{fu2026gui-agent-skills,
+@misc{fu2026gui-agent-harness,
   author       = {Fu, Zichuan},
-  title        = {GUI Agent Skills: Visual Memory-Driven GUI Automation for macOS},
+  title        = {GUI Agent Harness: Autonomous GUI Automation with Visual Memory},
   year         = {2026},
   publisher    = {GitHub},
-  url          = {https://github.com/Fzkuji/GUI-Agent-Skills},
+  url          = {https://github.com/Fzkuji/GUI-Agent-Harness},
 }
 ```
 
 ---
 
-## ⭐ Star History
-
 <p align="center">
-  <a href="https://star-history.com/#Fzkuji/GUI-Agent-Skills&Date">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Fzkuji/GUI-Agent-Skills&type=Date&theme=dark" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Fzkuji/GUI-Agent-Skills&type=Date" />
-      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Fzkuji/GUI-Agent-Skills&type=Date" width="600" />
-    </picture>
-  </a>
-</p>
-
-<p align="center">
-  <sub>Built with 🦞 by the GUI Agent Skills team · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></sub>
+  <sub>Built with <a href="https://github.com/Fzkuji/Agentic-Programming">Agentic Programming</a></sub>
 </p>
