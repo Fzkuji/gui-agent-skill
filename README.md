@@ -27,6 +27,16 @@
 
 ---
 
+## News
+
+- **[2026-04-14]** 🏆 **OSWorld Multi-Apps 79.8%** — 72.6/91 evaluated tasks. 4-phase step loop + CLI session persistence + PRESERVE FORMAT work habit. [Results →](benchmarks/osworld/multi_apps.md)
+- **[2026-04-07]** 🤖 **Agent-native architecture** — Rebuilt execution core on [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming), unifying GUI perception and free-form agent actions under a single decision loop. Eliminates task-specific scripting.
+- **[2026-03-30]** 📐 **ImageContext coordinate system** — Replaced dual-space model with `ImageContext` class; scale-independent cropping, fixes crop bugs on non-fullscreen images.
+- **[2026-03-29]** 🎬 **v0.3 — Unified Actions & Cross-Platform GUI** — `gui_action.py` as single entry point. Platform backends auto-selected via `--remote`.
+- **[2026-03-23]** 🏆 **OSWorld Chrome 93.5%** — One attempt (43/46), 97.8% two attempts (45/46). [Results →](benchmarks/osworld/)
+- **[2026-03-23]** 🔄 **Memory overhaul** — Split storage, automatic component forgetting, state merging by Jaccard similarity.
+- **[2026-03-10]** 🚀 **Initial release** — GPA-GUI-Detector + Apple Vision OCR + template matching + per-app visual memory.
+
 ## What is GUI Agent Harness?
 
 A CLI tool that turns any LLM into a GUI automation agent. You give it a natural-language task, it operates the desktop autonomously — screenshots, clicks, types, verifies, and repeats until the task is done.
