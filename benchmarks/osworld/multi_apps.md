@@ -109,9 +109,9 @@
 | 88 | `e8172110` | GIMP pixel art extraction | **1.0** | ✅ PRESERVE FORMAT指导+CLI session：去背景不crop，保持1280×1280，SSIM=0.967，3步 |
 | 89 | `42f4d1c7` | VS Code + GIMP scripting | **1.0** | ✅ GUI安装mattn.lisp扩展+Script-Fu resize脚本，11步。系统代理修复后联网成功 |
 | 90 | `3c8f201a` | Download + compress image | **1.0** | 下载+压缩图片到600KB以下，15步2067秒 |
-| 91 | `d68204bf` | Divide image into sections | | |
+| 91 | `d68204bf` | Divide image into sections | **0.0** | ❌ 暖色调排序方向和gold相反，agent按warmth=[41.5,48.7,63.9]保持原序，gold期望反序[2,1,0] |
 | 92 | `91190194` | GIMP crop top 20% | **1.0** | ✅ PIL裁剪顶部20%，2步87秒 |
-| 93 | `7f35355e` | CSV + find median price | | |
+| 93 | `7f35355e` | CSV + find median price | **0.0** | ❌ 中位数计算25.27 vs gold 24.93，空行处理方式不同 |
 | 94 | `98e8e339` | Merge txt files to docx | **1.0** | ✅ 合并txt到docx，3步260秒 |
 | 95 | `0e5303d4` | Clone Python course repo | **1.0** | ✅ 克隆课程仓库，2步131秒 |
 | 96 | `df67aebb` | Paper bibliography | | |
