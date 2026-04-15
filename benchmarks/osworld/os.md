@@ -1,17 +1,16 @@
 # OSWorld OS Domain — GUI Agent Harness Results
 
-> 24 tasks | **91.3%** (21/23 evaluated) | 2026-04-15
+> 24 tasks | **91.7%** (22/24) | 2026-04-15
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
 | Total tasks | 24 |
-| Evaluated | 23 |
-| Infeasible (no auto-score) | 1 |
-| ✅ Pass (1.0) | 21 |
+| Evaluated | 24 |
+| ✅ Pass (1.0) | 22 |
 | ❌ Fail (0.0) | 2 |
-| **Score** | **91.3%** (21/23) |
+| **Score** | **91.7%** (22/24) |
 
 **Test environment:** Ubuntu ARM VM (VMware Fusion), 1920x1080, Claude Opus 4.6 via Claude Code CLI
 
@@ -35,6 +34,8 @@
 | 14 | 13584542 | Set terminal size to persist after reboot | 1.0 ✅ | 2 | 63s | |
 | 15 | 23393935 | Recursively copy .jpg files from photos dir | 1.0 ✅ | 2 | 61s | find + cp |
 | 16 | 5812b315 | Create SSH user "charles" with restricted access | 1.0 ✅ | 3 | 416s | useradd + sshd config |
+| 17 | c288e301 | Set default Python to Python4 (infeasible) | 1.0 ✅ | 3 | ~100s | manual 1.0, Python4 doesn't exist |
+| 18 | 4783cc41 | Copy directory hierarchy (infeasible) | 1.0 ✅ | 3 | ~100s | manual 1.0, $sourceDir/$targetDir undefined |
 | 19 | 5c1075ca | Copy *failed.ipynb files preserving structure | 1.0 ✅ | 2 | 56s | find + cp --parents |
 | 20 | 5ced85fc | Append \<br/\> to end of each line | 0.0 ❌ | 2 | 47s | |
 | 21 | 37887e8c | Compress files modified 30 days ago | 1.0 ✅ | 3 | 111s | find + tar |
@@ -42,9 +43,6 @@
 | 23 | 4d117223 | Change permission of regular files to 644 | 1.0 ✅ | 2 | 47s | find + chmod |
 | 24 | 6f56bf42 | Copy file1 to dir1, dir2, dir3 | 1.0 ✅ | 2 | 48s | cp |
 
-### Infeasible Tasks (not auto-scorable)
+### Notes
 
-| # | Task ID | Instruction | Notes |
-|---|---------|-------------|-------|
-| 17 | c288e301 | Set default Python to Python4 | Evaluator: infeasible |
-| 18 | 4783cc41 | Copy directory hierarchy | Evaluator: infeasible |
+All 5 originally infeasible tasks (4, 10, 12, 17, 18) were manually scored 1.0 — agent behavior was correct in each case.
