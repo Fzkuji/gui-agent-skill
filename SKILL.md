@@ -5,51 +5,58 @@ description: "GUI automation via visual perception. Screenshot → detect → cl
 
 # GUI Agent
 
-Autonomous GUI task execution. Give it a natural language task, it handles the rest.
+Autonomous GUI task execution. Give it a natural language task, it operates the desktop.
 
-## Usage
+## When to Use
 
-```bash
-cd ~/Documents/GUI\ Agent\ Skills/GUI-Agent-Harness
-source .venv/bin/activate
-python3 gui_harness/main.py "Open Firefox and go to google.com"
-```
+Use `gui-agent` when the user asks you to:
+- Operate a desktop application (click buttons, fill forms, navigate menus)
+- Interact with a VM (OSWorld tasks)
+- Do anything that requires seeing and clicking on a screen
 
-For remote VMs (OSWorld):
-
-```bash
-python3 gui_harness/main.py --vm http://VM_IP:5000 "Add a lecture to the timetable"
-```
-
-Options:
-
-```
---vm URL          Remote VM HTTP API (e.g., http://172.16.82.132:5000)
---max-steps N     Max actions before stopping (default: 15)
---provider NAME   Force LLM provider: openclaw, claude-code, anthropic, openai
---model NAME      Override model name
-```
-
-## What It Does
-
-`execute_task()` runs an autonomous loop:
-
-1. **OBSERVE** — screenshot + OCR + GPA-GUI-Detector → understand current state
-2. **PLAN** — LLM decides the next action based on task and current state
-3. **ACT** — execute the action (click, type, scroll, etc.)
-4. **VERIFY** — screenshot again → check if action succeeded
-5. **REPEAT** — until task is done or max steps reached
-
-All sub-functions (observe, act, verify, learn, memory) are called automatically.
-
-## First-Time Setup
+## How to Use
 
 ```bash
-cd ~/Documents/GUI\ Agent\ Skills/GUI-Agent-Harness
-git submodule update --init --recursive
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e ./libs/agentic-programming
-pip install -e .
-pip install ultralytics requests
-python3 -m gui_harness.platform.activate
+gui-agent "your task description here"
 ```
+
+Examples:
+
+```bash
+# Desktop automation
+gui-agent "Open Firefox and go to google.com"
+gui-agent "Send hello to John in WeChat"
+gui-agent "Install the Orchis GNOME theme"
+
+# Remote VM
+gui-agent --vm http://172.16.82.132:5000 "Open GitHub in Chrome"
+
+# With specific model
+gui-agent --provider claude-code --model opus "Crop the top 20% of the image in GIMP"
+```
+
+## Options
+
+```
+gui-agent [OPTIONS] TASK
+
+TASK                  Natural language task description
+
+--vm URL              Remote VM HTTP API
+--provider NAME       Force LLM provider: claude-code, openclaw, anthropic, openai
+--model NAME          Override model name (e.g., opus, sonnet, gpt-4o)
+--max-steps N         Max actions before stopping (default: 15)
+--app NAME            App name for component memory (default: desktop)
+```
+
+## What It Does Internally
+
+The agent runs an autonomous loop — you don't need to manage any of this:
+
+1. **Observe** — screenshot + UI detection + component matching
+2. **Verify** — check if the previous action succeeded
+3. **Plan** — decide the next action (click, type, scroll, etc.)
+4. **Execute** — perform the action
+5. **Repeat** — until task is done or max steps reached
+
+The agent learns UI components on first encounter and reuses them in future sessions.

@@ -147,7 +147,21 @@ gui-agent --provider claude-code --model opus "Send hello in WeChat"
 
 ### Use as LLM skill
 
-GUI Agent Harness is designed to be called by an LLM as a tool. Add [SKILL.md](SKILL.md) to your LLM's skill/prompt configuration — it tells the LLM when and how to invoke `gui-agent`.
+GUI Agent Harness is designed to be called by an LLM as a tool. After installation (`pip install`), register it as a skill so your LLM knows when and how to use it:
+
+**Claude Code:**
+
+```bash
+# Add the project directory to Claude Code's skill search path
+# Claude Code auto-discovers SKILL.md files in configured directories
+claude config set skillPaths '["<path-to-GUI-Agent-Harness>"]'
+```
+
+Or simply work from the project directory — Claude Code reads `SKILL.md` automatically when it's in the current working directory or any parent.
+
+**Other LLMs (OpenClaw, custom agents):**
+
+Copy or symlink [SKILL.md](SKILL.md) into your LLM's skill directory. The skill file tells the LLM when to use `gui-agent` and how to call it — no other configuration needed.
 
 ## CLI Options
 
