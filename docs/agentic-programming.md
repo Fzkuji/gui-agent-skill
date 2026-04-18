@@ -1,12 +1,17 @@
-# Agentic Programming Integration
+# OpenProgram Integration
 
-> GUI Agent Harness is powered by [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming) — a framework where Python functions with LLM-driven docstrings become autonomous agents.
+> GUI Agent Harness is powered by [OpenProgram](https://github.com/Fzkuji/OpenProgram) — the reference implementation of the **Agentic Programming** paradigm: Python functions with LLM-driven docstrings become autonomous agents.
+>
+> *Agentic Programming* = the paradigm (decorator + context tree + meta functions).
+> *OpenProgram* = the product (the `openprogram` Python package).
 
 ## Core Concept
 
-Every LLM-calling function in GUI Agent Harness is an `@agentic_function`. The docstring is the prompt. The function signature defines the interface. The framework handles context management and provider abstraction.
+Every LLM-calling function in GUI Agent Harness is an `@agentic_function` (imported from `openprogram`). The docstring is the prompt. The function signature defines the interface. The framework handles context management and provider abstraction.
 
 ```python
+from openprogram import agentic_function
+
 @agentic_function(summarize={"depth": 0, "siblings": 0})
 def plan_next_action(task, img_path, component_info, ..., runtime=None) -> dict:
     """Decide the next action to take toward completing the task.

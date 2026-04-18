@@ -146,7 +146,7 @@ PROXY_URL = "http://172.16.82.1:6152"                    # Surge proxy on host
 - **VM**: Ubuntu ARM (aarch64), VMware Fusion
 - **Resolution**: 1920x1080
 - **LLM**: Claude Opus 4.6 via Claude Code CLI
-- **Framework**: [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming)
+- **Framework**: [OpenProgram](https://github.com/Fzkuji/OpenProgram) (Agentic Programming paradigm)
 
 ## Domain Results
 

@@ -11,7 +11,7 @@
 
   <p>
     <a href="#快速开始"><img src="https://img.shields.io/badge/快速开始-blue?style=for-the-badge" /></a>
-    <a href="https://github.com/Fzkuji/Agentic-Programming"><img src="https://img.shields.io/badge/Agentic_Programming-green?style=for-the-badge" /></a>
+    <a href="https://github.com/Fzkuji/OpenProgram"><img src="https://img.shields.io/badge/OpenProgram-green?style=for-the-badge" /></a>
     <a href="https://discord.gg/vfyqn5jWQy"><img src="https://img.shields.io/badge/Discord-7289da?style=for-the-badge&logo=discord&logoColor=white" /></a>
   </p>
 
@@ -37,7 +37,8 @@
 ## 最新动态
 
 - **[2026-04-14]** 🏆 **OSWorld Multi-Apps 79.8%** — 91个任务中得分72.6。4阶段步骤循环 + CLI session持久化 + PRESERVE FORMAT工作习惯。[详细结果 →](../benchmarks/osworld/multi_apps.md)
-- **[2026-04-07]** 🤖 **Agent原生架构** — 基于 [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming) 重建执行核心，将GUI感知与自由形式的agent动作统一到单一决策循环中。
+- **[2026-04-18]** 📦 **OpenProgram** — Agentic Programming 从概念落地为产品：仓库/包/CLI 统一改名为 [OpenProgram](https://github.com/Fzkuji/OpenProgram)。Agentic Programming 保留为范式/哲学名称；OpenProgram 是可发布的框架。Harness 的 import 已迁到 `from openprogram import ...`。
+- **[2026-04-07]** 🤖 **Agent原生架构** — 基于 [Agentic Programming](https://github.com/Fzkuji/OpenProgram) 范式重建执行核心，将GUI感知与自由形式的agent动作统一到单一决策循环中。
 - **[2026-03-29]** 🎬 **v0.3 — 统一动作与跨平台GUI** — 平台后端自动选择。
 - **[2026-03-23]** 🏆 **OSWorld Chrome 93.5%** — 单次尝试43/46，两次尝试97.8%（45/46）。
 - **[2026-03-10]** 🚀 **首次发布** — GPA-GUI-Detector + Apple Vision OCR + 模板匹配 + 按应用的视觉记忆。
@@ -88,7 +89,9 @@ LLM不需要了解GUI自动化的工作原理——它只需调用工具。
 pip install git+https://github.com/Fzkuji/GUI-Agent-Harness.git
 ```
 
-所有依赖会自动安装，包括 [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming)、ultralytics（GPA-GUI-Detector）、OpenCV、Pillow 等。
+所有依赖会自动安装，包括 [OpenProgram](https://github.com/Fzkuji/OpenProgram)（Agentic Programming 的运行时）、ultralytics（GPA-GUI-Detector）、OpenCV、Pillow 等。
+
+> **本地开发**：上游 PyPI 包名是 `openprogram`。如果你要跑未发布的分支，先本地装 OpenProgram（`pip install -e /path/to/OpenProgram`），然后在本仓库里 `pip install -e . --no-deps`，绕过 git URL 拉取。
 
 开发模式安装（可编辑）：
 
@@ -255,11 +258,13 @@ memory/
 | Apple Vision OCR / EasyOCR | ~1.6秒 | 文本元素 |
 | 模板匹配 | ~0.3秒 | 已知组件（首次检测后） |
 
-## 基于 Agentic Programming 构建
+## 基于 OpenProgram 构建
 
-GUI Agent Harness 基于 [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming) 构建——一个将带有LLM驱动docstring的Python函数变为自主代理的框架。每个函数（`verify_step`、`plan_next_action`、`general_action`）都是一个 `@agentic_function`，精确调用LLM一次并返回结构化数据。
+GUI Agent Harness 基于 [OpenProgram](https://github.com/Fzkuji/OpenProgram) 构建——**Agentic Programming** 范式的参考实现：带有LLM驱动docstring的Python函数变为自主代理。每个函数（`verify_step`、`plan_next_action`、`general_action`）都是一个 `@agentic_function`，精确调用LLM一次并返回结构化数据。
 
 ```python
+from openprogram import agentic_function
+
 @agentic_function(summarize={"siblings": -1})
 def plan_next_action(task, img_path, ..., runtime=None) -> dict:
     """决定下一步操作以完成任务。
@@ -275,6 +280,8 @@ def plan_next_action(task, img_path, ..., runtime=None) -> dict:
 ```
 
 Docstring就是prompt。函数签名定义接口。框架处理上下文管理、历史摘要和provider抽象。
+
+> **命名说明**：*Agentic Programming* 是范式（哲学 —— 装饰器 + 上下文树 + 元函数）；*OpenProgram* 是产品（承载运行时的 Python 包）。`@agentic_function` 装饰器名保留下来，作为血统标识。
 
 ## LLM Provider 优先级
 
@@ -308,7 +315,8 @@ GUI-Agent-Harness/
 │   └── adapters/
 │       └── vm_adapter.py      # 将所有I/O重定向到远程VM
 ├── libs/
-│   └── agentic-programming/   # Agentic Programming框架（子模块）
+│   └── agentic-programming/   # OpenProgram 运行时（git 子模块）
+│                              # 路径名在上游仓库改名过渡期暂保留
 ├── benchmarks/
 │   └── osworld/               # OSWorld基准测试运行器 + 结果
 ├── memory/                    # 视觉记忆存储（按平台、按应用）
@@ -342,5 +350,5 @@ MIT — 详见 [LICENSE](../LICENSE)。
 ---
 
 <p align="center">
-  <sub>基于 <a href="https://github.com/Fzkuji/Agentic-Programming">Agentic Programming</a> 构建</sub>
+  <sub>基于 <a href="https://github.com/Fzkuji/OpenProgram">OpenProgram</a> 构建 —— Agentic Programming 范式的产品化实现</sub>
 </p>

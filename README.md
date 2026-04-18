@@ -11,7 +11,7 @@
 
   <p>
     <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-blue?style=for-the-badge" /></a>
-    <a href="https://github.com/Fzkuji/Agentic-Programming"><img src="https://img.shields.io/badge/Agentic_Programming-green?style=for-the-badge" /></a>
+    <a href="https://github.com/Fzkuji/OpenProgram"><img src="https://img.shields.io/badge/OpenProgram-green?style=for-the-badge" /></a>
     <a href="https://discord.gg/vfyqn5jWQy"><img src="https://img.shields.io/badge/Discord-7289da?style=for-the-badge&logo=discord&logoColor=white" /></a>
   </p>
 
@@ -37,7 +37,8 @@
 ## News
 
 - **[2026-04-14]** 🏆 **OSWorld Multi-Apps 79.8%** — 72.6/91 evaluated tasks. 4-phase step loop + CLI session persistence + PRESERVE FORMAT work habit. [Results →](benchmarks/osworld/multi_apps.md)
-- **[2026-04-07]** 🤖 **Agent-native architecture** — Rebuilt execution core on [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming), unifying GUI perception and free-form agent actions under a single decision loop. Eliminates task-specific scripting.
+- **[2026-04-18]** 📦 **OpenProgram** — Agentic Programming graduated from concept to product: repo/package/CLI renamed to [OpenProgram](https://github.com/Fzkuji/OpenProgram). Agentic Programming remains the paradigm name; OpenProgram is the shippable framework. Harness imports migrated to `from openprogram import ...`.
+- **[2026-04-07]** 🤖 **Agent-native architecture** — Rebuilt execution core on the [Agentic Programming](https://github.com/Fzkuji/OpenProgram) paradigm, unifying GUI perception and free-form agent actions under a single decision loop. Eliminates task-specific scripting.
 - **[2026-03-30]** 📐 **ImageContext coordinate system** — Replaced dual-space model with `ImageContext` class; scale-independent cropping, fixes crop bugs on non-fullscreen images.
 - **[2026-03-29]** 🎬 **v0.3 — Unified Actions & Cross-Platform GUI** — `gui_action.py` as single entry point. Platform backends auto-selected via `--remote`.
 - **[2026-03-23]** 🏆 **OSWorld Chrome 93.5%** — One attempt (43/46), 97.8% two attempts (45/46). [Results →](benchmarks/osworld/)
@@ -90,7 +91,9 @@ Full results: [benchmarks/osworld/multi_apps.md](benchmarks/osworld/multi_apps.m
 pip install git+https://github.com/Fzkuji/GUI-Agent-Harness.git
 ```
 
-All dependencies are installed automatically, including [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming), ultralytics (GPA-GUI-Detector), OpenCV, Pillow, etc.
+All dependencies are installed automatically, including [OpenProgram](https://github.com/Fzkuji/OpenProgram) (the Agentic Programming runtime), ultralytics (GPA-GUI-Detector), OpenCV, Pillow, etc.
+
+> **Local development**: the upstream PyPI package name is `openprogram`. If you're building against an unreleased branch, install OpenProgram first (`pip install -e /path/to/OpenProgram`) and then `pip install -e . --no-deps` inside this repo to avoid the git-URL fetch.
 
 For development (editable install):
 
@@ -257,11 +260,13 @@ memory/
 | Apple Vision OCR / EasyOCR | ~1.6s | Text elements |
 | Template Match | ~0.3s | Known components (after first detection) |
 
-## Built on Agentic Programming
+## Built on OpenProgram
 
-GUI Agent Harness is built on [Agentic Programming](https://github.com/Fzkuji/Agentic-Programming) — a framework where Python functions with LLM-powered docstrings become autonomous agents. Each function (`verify_step`, `plan_next_action`, `general_action`) is an `@agentic_function` that calls the LLM exactly once and returns structured data.
+GUI Agent Harness is built on [OpenProgram](https://github.com/Fzkuji/OpenProgram) — the reference implementation of the **Agentic Programming** paradigm, where Python functions with LLM-powered docstrings become autonomous agents. Each function (`verify_step`, `plan_next_action`, `general_action`) is an `@agentic_function` that calls the LLM exactly once and returns structured data.
 
 ```python
+from openprogram import agentic_function
+
 @agentic_function(summarize={"siblings": -1})
 def plan_next_action(task, img_path, ..., runtime=None) -> dict:
     """Decide the next action to take toward completing the task.
@@ -277,6 +282,8 @@ def plan_next_action(task, img_path, ..., runtime=None) -> dict:
 ```
 
 The docstring IS the prompt. The function signature defines the interface. The framework handles context management, history summarization, and provider abstraction.
+
+> **Naming**: *Agentic Programming* is the paradigm (the philosophy — decorator + context tree + meta functions). *OpenProgram* is the product (the Python package that ships the runtime). The `@agentic_function` decorator keeps the paradigm name as a visible badge of lineage.
 
 ## LLM Provider Priority
 
@@ -310,7 +317,8 @@ GUI-Agent-Harness/
 │   └── adapters/
 │       └── vm_adapter.py      # Redirect all I/O to remote VM
 ├── libs/
-│   └── agentic-programming/   # Agentic Programming framework (submodule)
+│   └── agentic-programming/   # OpenProgram runtime, pinned as git submodule
+│                              # (legacy name kept for compat during upstream rename)
 ├── benchmarks/
 │   └── osworld/               # OSWorld benchmark runner + results
 ├── memory/                    # Visual memory storage (per-platform, per-app)
@@ -344,5 +352,5 @@ MIT — see [LICENSE](LICENSE) for details.
 ---
 
 <p align="center">
-  <sub>Built with <a href="https://github.com/Fzkuji/Agentic-Programming">Agentic Programming</a></sub>
+  <sub>Built with <a href="https://github.com/Fzkuji/OpenProgram">OpenProgram</a> — the Agentic Programming paradigm, productized</sub>
 </p>
