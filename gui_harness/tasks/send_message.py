@@ -10,7 +10,7 @@ from __future__ import annotations
 from openprogram import agentic_function
 
 
-@agentic_function(compress=True)
+@agentic_function()
 def send_message(app_name: str, recipient: str, message: str,
                  runtime=None) -> dict:
     """Send a message to a recipient in a messaging app.

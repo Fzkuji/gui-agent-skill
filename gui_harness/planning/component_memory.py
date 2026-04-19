@@ -6,11 +6,13 @@ by combining GPA detection, template matching against saved memory, and
 LLM-driven labeling of unknown components.
 
 Design (from DESIGN doc):
-  Phase 1: GPA detection + OCR → N components (sorted by confidence)
-  Phase 2: Template match against memory → known components list
-  Phase 3: LLM sees known components → found target? → return coordinates
-  Phase 4: Label unknown components one-by-one (stop when target found)
-  Phase 5: Cleanup (delete unlabeled screenshots)
+  Phase 1:   GPA detection + OCR → N components (sorted by confidence)
+  Phase 2:   Template match against memory → known components list
+  Phase 3:   LLM sees known components → found target? → return coordinates
+  Phase 3.5: Deterministic OCR-text fuzzy match (Python fallback when Phase 3
+             LLM returns False — catches menu/label texts the LLM misjudges)
+  Phase 4:   Label unknown components one-by-one (stop when target found)
+  Phase 5:   Cleanup (delete unlabeled screenshots)
 
 This module is called by execute_task.py whenever an action needs
 screen coordinates (click, double_click, right_click, drag).
@@ -20,6 +22,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import sys
 import time
 from pathlib import Path
 from typing import Optional
@@ -188,7 +192,7 @@ def _update_activity(app_dir: Path, matched_names: set[str]):
 # Phase 3: LLM decides from known components
 # ═══════════════════════════════════════════
 
-@agentic_function(summarize={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"depth": 0, "siblings": 0})
 def find_target_in_known(
     task: str,
     target: str,
@@ -196,25 +200,51 @@ def find_target_in_known(
     texts: list[dict],
     runtime=None,
 ) -> dict:
-    """Given a list of known (labeled) UI components and OCR text, decide if the
-    target element is among them.
+    """Locate the target element in the provided lists. You are a LOCATOR.
+
+    Your ONLY job: check whether the target's visible text/role matches any
+    entry in `known_components` or `OCR text`. If yes → return that entry's
+    coordinates. If no → return found=false.
 
     You receive:
-    - The task being performed
-    - The target element description
-    - Known components: labeled UI elements with exact coordinates
+    - target: natural-language description of the element to find
+    - known_components: labeled UI elements with exact coordinates
     - OCR text: all visible text on screen with coordinates
 
-    If you can identify the target, return its coordinates.
-    Coordinates MUST come from the provided lists — never estimate.
+    What `found=true` means:
+      The element's visible text or role appears in one of the two lists.
+      Use THAT list entry's coordinates verbatim. Nothing more.
 
-    Return JSON:
+    What `found=false` means:
+      No list entry's text/role matches the target's text/role.
+
+    `found` is NOT about any of these (ignore them entirely):
+      - Whether clicking this element will accomplish the task
+      - Whether a menu/dialog is in the "right" state
+      - Whether the action will succeed or what happens after
+      - Whether the task as a whole is complete
+      Those decisions belong to the planner — not to you.
+
+    Matching hints:
+      - Strip noise from the target before matching: "at (x, y)",
+        "menu item", "button", "label", "on the left/right", dialog/menu
+        names, etc. Match on the meaningful text (e.g. target
+        "File menu label at (88, 76)" → match OCR 'File' at (87, 76)).
+      - Menu labels in the menu bar (File, Edit, View, Colors, ...) are
+        ALWAYS visible regardless of whether any dropdown is open.
+      - If the target description includes a coordinate, it is only a
+        hint from the planner — the authoritative coordinates are the
+        ones in the lists. Never invent coordinates.
+      - If multiple entries match the text, pick the one whose
+        position/context best fits the target description.
+
+    Return ONLY JSON:
     {
       "found": true/false,
-      "name": "component name or text label",
-      "cx": <x coordinate>,
-      "cy": <y coordinate>,
-      "reasoning": "why this is the target"
+      "name": "matched label from the lists",
+      "cx": <x from the matched entry>,
+      "cy": <y from the matched entry>,
+      "reasoning": "which list entry you matched (one short sentence)"
     }
     """
     from gui_harness.utils import parse_json
@@ -245,8 +275,19 @@ OCR text on screen:
     reply = rt.exec(content=[{"type": "text", "text": context}])
 
     try:
-        return parse_json(reply)
-    except Exception:
+        result = parse_json(reply)
+        if not result.get("found"):
+            reasoning = result.get("reasoning", "(none)")
+            print(
+                f"  [phase3] LLM said found=False. reasoning: {reasoning[:400]}",
+                file=sys.stderr,
+            )
+        return result
+    except Exception as _e:
+        print(
+            f"  [phase3] parse FAILED ({_e.__class__.__name__}); raw reply:\n{reply[:800]}",
+            file=sys.stderr,
+        )
         return {"found": False, "reasoning": f"Parse failed: {reply[:200]}"}
 
 
@@ -254,7 +295,7 @@ OCR text on screen:
 # Phase 4: Label unknown components one by one
 # ═══════════════════════════════════════════
 
-@agentic_function(summarize={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"depth": 0, "siblings": 0})
 def label_single_component(
     task: str,
     target: str,
@@ -486,8 +527,11 @@ def locate_target(
     Returns:
         dict with {cx, cy, name, timing} if found, None if not found.
     """
-    import sys
     _timing = {}
+
+    # Diagnostic: log the verbatim target string so we can see if Plan wrote
+    # noisy content (coordinates, "menu item" suffixes, etc.) into it.
+    print(f"  [locate] target={target!r}", file=sys.stderr)
 
     # Phase 1: Detection
     t0 = time.time()
@@ -496,6 +540,16 @@ def locate_target(
     texts = detection["texts"]
     _timing["phase1_detect"] = round(time.time() - t0, 2)
     print(f"  [locate] Phase 1: {len(icons)} icons, {len(texts)} texts ({_timing['phase1_detect']}s)", file=sys.stderr)
+
+    # Diagnostic: dump a preview of OCR texts so we can compare against what
+    # Plan referenced and see whether the target's words appear on screen.
+    ocr_snippets = [
+        f"'{(t.get('label') or '')[:40]}'@({t.get('cx', 0)},{t.get('cy', 0)})"
+        for t in texts[:20]
+        if len(t.get("label") or "") > 1
+    ]
+    if ocr_snippets:
+        print(f"  [locate] OCR[:20] = {' | '.join(ocr_snippets)}", file=sys.stderr)
 
     # Phase 2: Memory matching
     t0 = time.time()
@@ -664,7 +718,7 @@ def get_available_transitions(app_name: str, current_state: str) -> list[dict]:
     return available
 
 
-@agentic_function(summarize={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"depth": 0, "siblings": 0})
 def select_transition(
     task: str,
     current_state: str,

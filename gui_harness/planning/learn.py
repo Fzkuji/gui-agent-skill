@@ -38,32 +38,45 @@ def has_base_memory(app_name: str) -> bool:
 def learn_app_components(
     app_name: str,
     img_path: str | None = None,
+    tour: list | None = None,
     batch_size: int = 50,
     runtime=None,
     force: bool = False,
+    settle: float = 1.0,
 ) -> dict:
     """Learn all UI components for an app via numbered screenshot + batch LLM labeling.
 
-    Takes a screenshot, runs GPA detection, draws numbered bounding boxes,
-    sends ONE annotated image to LLM for batch labeling, then crops and saves
-    each labeled component as base memory.
-
-    This replaces 60+ individual LLM calls (Phase 4) with 1-2 batch calls.
+    Three modes:
+    1. Single-shot (default): capture one screenshot, label, save.
+    2. Explicit tour: caller passes a list of tour steps; the function drives
+       the UI through each state and learns at every screen, accumulating into
+       the same base memory. This covers menus/dialogs that the startup screen
+       can't show.
+    3. Auto tour: if tour is None and TOURS[app_name] is registered, that tour
+       is used automatically. Pass tour=[] to force single-shot.
 
     Args:
-        app_name: Name of the app (e.g., "firefox", "libreoffice_calc")
-        img_path: Screenshot path. None = auto-capture from VM or local.
+        app_name: Name of the app (e.g., "firefox", "gimp", "libreoffice_calc").
+        img_path: Screenshot path (single-shot mode only). None = auto-capture.
+        tour: List of tour steps. Each step is a dict:
+                {"state": "human-readable name",
+                 "setup": [action, ...],          # actions to reach this state
+                 "reset": [action, ...]}          # optional; default = 2× Escape
+              Each action is a tuple:
+                ("hotkey", "alt+f") | ("key", "Escape") | ("click", x, y) |
+                ("type", "hello") | ("wait", 0.5)
         batch_size: Max components per LLM call (default 50).
         runtime: openprogram Runtime instance.
         force: Re-learn even if base memory exists.
+        settle: Seconds to wait between setup and screenshot (default 1.0).
 
     Returns:
         {"app_name": str, "components_saved": int, "components_skipped": int,
-         "timing": {"detect": float, "label": float, "save": float}}
+         "states_visited": int, "timing": {"detect": float, "label": float,
+         "save": float}}
     """
     if runtime is None:
         raise ValueError("This function requires a runtime argument")
-    rt = runtime
 
     # Check existing base memory
     if not force and has_base_memory(app_name):
@@ -74,38 +87,94 @@ def learn_app_components(
             "already_learned": True,
         }
 
-    # Step 1: Screenshot + detection
+    # Resolve tour (explicit > registry > single-shot)
+    if tour is None:
+        from gui_harness.planning.tours import TOURS
+        tour = TOURS.get(app_name)
+
+    # Collect per-screen results
+    screens: list[tuple[str, str | None]] = []  # (state_name, img_path)
+    if tour:
+        for step in tour:
+            state_name = step.get("state", "unnamed")
+            for action in step.get("setup", []):
+                _run_tour_action(action)
+            time.sleep(settle)
+            shot = screenshot.take()
+            screens.append((state_name, shot))
+            reset = step.get("reset")
+            if reset is None:
+                reset = [("key", "Escape"), ("key", "Escape")]
+            for action in reset:
+                _run_tour_action(action)
+            time.sleep(0.3)
+    else:
+        screens.append(("initial", img_path))  # None triggers capture below
+
+    # Accumulate across all screens
+    totals = {"saved": 0, "skipped": 0, "detect": 0.0, "label": 0.0, "save": 0.0}
+    for state_name, shot in screens:
+        r = _learn_one_screen(app_name, shot, runtime, batch_size)
+        print(
+            f"  [learn/{state_name}] saved={r['saved']} skipped={r['skipped']} "
+            f"(detect={r['t_detect']:.1f}s label={r['t_label']:.1f}s)",
+            file=sys.stderr,
+        )
+        totals["saved"] += r["saved"]
+        totals["skipped"] += r["skipped"]
+        totals["detect"] += r["t_detect"]
+        totals["label"] += r["t_label"]
+        totals["save"] += r["t_save"]
+
+    # Mark base memory once (regardless of how many screens learned)
+    app_dir = app_memory.get_app_dir(app_name)
+    meta = app_memory.load_meta(app_dir)
+    meta["app"] = app_name
+    meta["base_memory_learned_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    meta["base_memory_components"] = totals["saved"]
+    meta["base_memory_states_visited"] = len(screens)
+    app_memory.save_meta(app_dir, meta)
+
+    return {
+        "app_name": app_name,
+        "components_saved": totals["saved"],
+        "components_skipped": totals["skipped"],
+        "states_visited": len(screens),
+        "timing": {
+            "detect": round(totals["detect"], 2),
+            "label": round(totals["label"], 2),
+            "save": round(totals["save"], 2),
+        },
+    }
+
+
+def _learn_one_screen(
+    app_name: str,
+    img_path: str | None,
+    runtime,
+    batch_size: int,
+) -> dict:
+    """Label and save components from a single screenshot. Returns per-call counts."""
     t0 = time.time()
     if img_path is None:
         img_path = screenshot.take()
 
     det = detector.detect_all(img_path, conf=0.3)
     icons = det[0] if isinstance(det, tuple) else det.get("icons", [])
-    # detect_all returns (icons, texts, merged, img_w, img_h) tuple
     if isinstance(det, tuple):
         icons = det[0]
     t_detect = time.time() - t0
 
-    # Filter tiny elements
     icons = [ic for ic in icons if ic.get("w", 0) >= 25 and ic.get("h", 0) >= 25]
-    # Sort by confidence descending
     icons = sorted(icons, key=lambda e: e.get("confidence", 0), reverse=True)
 
     if not icons:
-        return {
-            "app_name": app_name,
-            "components_saved": 0,
-            "components_skipped": 0,
-            "timing": {"detect": t_detect, "label": 0, "save": 0},
-        }
+        return {"saved": 0, "skipped": 0, "t_detect": t_detect, "t_label": 0.0, "t_save": 0.0}
 
-    # Step 2: Create numbered annotated screenshot
     annotated_path = detector.annotate_numbered(img_path, icons)
 
-    # Step 3: Batch LLM labeling
     t1 = time.time()
     labels = {}
-
     for batch_start in range(0, len(icons), batch_size):
         batch_icons = icons[batch_start:batch_start + batch_size]
         batch_labels = _batch_label(
@@ -113,13 +182,11 @@ def learn_app_components(
             icons=batch_icons,
             annotated_path=annotated_path,
             offset=batch_start,
-            runtime=rt,
+            runtime=runtime,
         )
         labels.update(batch_labels)
-
     t_label = time.time() - t1
 
-    # Step 4: Crop + save components
     t2 = time.time()
     screen_img = cv2.imread(img_path)
     app_dir = app_memory.get_app_dir(app_name)
@@ -140,8 +207,6 @@ def learn_app_components(
 
         icon = icons[idx]
         x, y, w, h = icon["x"], icon["y"], icon["w"], icon["h"]
-
-        # Crop with padding
         pad = 4
         y1 = max(0, y - pad)
         x1 = max(0, x - pad)
@@ -151,19 +216,16 @@ def learn_app_components(
         if crop.size == 0:
             continue
 
-        # Check for duplicates
-        is_dup, dup_name = app_memory.is_duplicate_icon(crop, components_dir)
+        is_dup, _ = app_memory.is_duplicate_icon(crop, components_dir)
         if is_dup:
             skipped += 1
             continue
 
-        # Save crop
         safe_label = label.replace("/", "-").replace(" ", "_").replace(":", "")[:50]
         final_path = str(components_dir / f"{safe_label}.png")
         if not os.path.exists(final_path):
             cv2.imwrite(final_path, crop)
 
-        # Save to components.json with base_memory flag
         components[label] = {
             "type": icon.get("type", "icon"),
             "source": "learn_batch",
@@ -180,26 +242,32 @@ def learn_app_components(
     app_memory.save_components(app_dir, components)
     t_save = time.time() - t2
 
-    # Step 5: Mark base memory in meta
-    meta = app_memory.load_meta(app_dir)
-    meta["app"] = app_name
-    meta["base_memory_learned_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    meta["base_memory_components"] = saved
-    app_memory.save_meta(app_dir, meta)
-
-    # Cleanup annotated image
     if annotated_path and os.path.exists(annotated_path):
         os.remove(annotated_path)
 
-    return {
-        "app_name": app_name,
-        "components_saved": saved,
-        "components_skipped": skipped,
-        "timing": {"detect": round(t_detect, 2), "label": round(t_label, 2), "save": round(t_save, 2)},
-    }
+    return {"saved": saved, "skipped": skipped, "t_detect": t_detect, "t_label": t_label, "t_save": t_save}
 
 
-@agentic_function(summarize={"depth": 0, "siblings": 0})
+def _run_tour_action(action) -> None:
+    """Execute one tour action. Supports tuple form."""
+    from gui_harness.action import input as _input
+    kind = action[0]
+    if kind == "hotkey":
+        keys = action[1].split("+")
+        _input.key_combo(*keys)
+    elif kind == "key":
+        _input.key_press(action[1])
+    elif kind == "click":
+        _input.mouse_click(action[1], action[2])
+    elif kind == "type":
+        _input.type_text(action[1])
+    elif kind == "wait":
+        time.sleep(action[1])
+    else:
+        raise ValueError(f"Unknown tour action: {kind}")
+
+
+@agentic_function(render_range={"depth": 0, "siblings": 0})
 def _batch_label(
     app_name: str,
     icons: list[dict],

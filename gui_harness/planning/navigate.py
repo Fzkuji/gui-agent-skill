@@ -19,7 +19,7 @@ from gui_harness.memory import app_memory
 from gui_harness.planning.component_memory import match_memory_components
 
 
-@agentic_function(compress=True)
+@agentic_function()
 def navigate(target_state: str, app_name: str,
              runtime=None, max_steps: int = 10) -> dict:
     """Navigate to a target state in an app's UI state graph.

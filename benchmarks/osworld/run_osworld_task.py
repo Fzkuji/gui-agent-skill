@@ -246,11 +246,21 @@ def run_task(task_config: dict, vm_ip: str, max_steps: int) -> dict:
             "Keep the same sheet name. Do not add new sheets. Save back to the same path."
         )
 
+    # GUI-only apps: the OSWorld evaluator inspects the live app state
+    # (e.g. GIMP's loaded image, LibreOffice's open document), so changes
+    # made via shell commands on disk don't score. Force GUI interaction.
+    GUI_ONLY_APPS = {
+        "gimp", "libreoffice_calc", "libreoffice_writer", "libreoffice_impress",
+        "chrome", "vlc", "vscode", "thunderbird",
+    }
+    allow_general = app_name not in GUI_ONLY_APPS
+
     result = execute_task(
         task=task_instruction,
         runtime=runtime,
         max_steps=max_steps,
         app_name=app_name,
+        allow_general=allow_general,
     )
     return result
 

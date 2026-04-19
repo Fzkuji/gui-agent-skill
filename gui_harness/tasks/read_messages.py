@@ -10,7 +10,7 @@ from __future__ import annotations
 from openprogram import agentic_function
 
 
-@agentic_function(compress=True)
+@agentic_function()
 def read_messages(app_name: str, contact: str = None,
                   runtime=None) -> dict:
     """Read messages from a messaging app.

@@ -13,7 +13,7 @@ from gui_harness.perception import screenshot, ocr, detector
 from gui_harness.action.input import get_frontmost_app
 
 
-@agentic_function(summarize={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"depth": 0, "siblings": 0})
 def observe(task: str, app_name: str = None, runtime=None) -> dict:
     """Observe the current screen state. Analyze the screenshot and detection data.
 

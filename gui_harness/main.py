@@ -27,8 +27,7 @@ from gui_harness.constants import GUI_SYSTEM_PROMPT
 # ═══════════════════════════════════════════
 
 @agentic_function(
-    compress=True,
-    summarize={"siblings": -1},
+    render_range={"siblings": -1},
     system=GUI_SYSTEM_PROMPT,
     input={
         "task": {
@@ -53,6 +52,7 @@ def gui_agent(
     max_steps: int = 15,
     app_name: str = "desktop",
     runtime=None,
+    allow_general: bool = True,
 ) -> dict:
     """Autonomous GUI agent. Execute a GUI task by looping observe -> verify -> plan -> action.
 
@@ -117,6 +117,7 @@ def gui_agent(
                 feedback=feedback,
                 app_name=app_name,
                 runtime=runtime,
+                allow_general=allow_general,
             )
         except Exception as e:
             print(f"  [step {step_num}] ERROR: {e.__class__.__name__}: {e}", file=sys.stderr)
@@ -148,6 +149,15 @@ def gui_agent(
 
         # Build feedback for next iteration
         feedback = build_step_feedback(result)
+
+        # Compress CLI session context between steps when it grows large.
+        # Each gui_step adds a screenshot + detection results + tool outputs,
+        # which accumulate in the persistent claude-code subprocess's session.
+        # Only the `feedback` dict carries semantic state forward, so the raw
+        # history is redundant. Threshold is set below the model's 80% default
+        # so compact fires while the session is still responsive.
+        if hasattr(runtime, "compact"):
+            runtime.compact(threshold_tokens=200_000)
 
     # ── Conclusion: LLM summarizes the result ──
     print(f"  [conclusion] ...", file=sys.stderr)
@@ -193,6 +203,8 @@ def main():
     parser.add_argument("--model", help="Override model name")
     parser.add_argument("--max-steps", type=int, default=15, help="Max actions (default: 15)")
     parser.add_argument("--app", default="desktop", help="App name for memory (default: desktop)")
+    parser.add_argument("--no-general", action="store_true",
+                        help="Disable command-line ('general') action; force GUI-only interaction.")
     args = parser.parse_args()
 
     # VM adapter
@@ -215,7 +227,13 @@ def main():
     print()
 
     # Execute
-    result = gui_agent(task=args.task, max_steps=args.max_steps, app_name=args.app, runtime=runtime)
+    result = gui_agent(
+        task=args.task,
+        max_steps=args.max_steps,
+        app_name=args.app,
+        runtime=runtime,
+        allow_general=not args.no_general,
+    )
 
     # Report
     print()

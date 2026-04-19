@@ -104,9 +104,15 @@ def _action_done(reasoning: str = "") -> dict:
     return {"success": True, "done": True, "reasoning": reasoning}
 
 
-def _build_action_registry():
-    """Build the action function registry for LLM dispatch."""
-    return {
+def _build_action_registry(allow_general: bool = True):
+    """Build the action function registry for LLM dispatch.
+
+    When allow_general=False, the "general" (command-line) action is omitted,
+    forcing the planner to accomplish the task via GUI primitives only.
+    Used for benchmarks (OSWorld GIMP etc.) whose evaluators require that
+    the change happen inside the target app's live state, not on disk.
+    """
+    registry = {
         "click": {
             "function": _action_click,
             "description": "Click a UI element on screen (we locate it for you)",
@@ -202,6 +208,9 @@ def _build_action_registry():
             "output": {"success": bool},
         },
     }
+    if not allow_general:
+        registry.pop("general", None)
+    return registry
 
 
 # ═══════════════════════════════════════════
@@ -290,7 +299,7 @@ def _observe(app_name: str) -> dict:
 # ═══════════════════════════════════════════
 
 @agentic_function(
-    summarize={"depth": 0, "siblings": 0},
+    render_range={"depth": 0, "siblings": 0},
     input={
         "task": {"description": "The overall task being performed"},
         "img_path": {"description": "Path to current screenshot (after previous action)"},
@@ -372,7 +381,7 @@ def verify_step(
 # ═══════════════════════════════════════════
 
 @agentic_function(
-    summarize={"depth": 0, "siblings": 0},
+    render_range={"depth": 0, "siblings": 0},
     input={
         "task": {"description": "The overall task being performed"},
         "img_path": {"description": "Path to current screenshot"},
@@ -453,10 +462,10 @@ def plan_next_action(
 # 4. Dispatch — pure Python, execute planned action
 # ═══════════════════════════════════════════
 
-def _dispatch(plan: dict, img_path: str, app_name: str, task: str, runtime) -> dict:
+def _dispatch(plan: dict, img_path: str, app_name: str, task: str, runtime, allow_general: bool = True) -> dict:
     """Execute the planned action. Pure Python dispatch (no LLM except via locate_target)."""
     action_name = plan.get("call", plan.get("action", "general"))
-    registry = _build_action_registry()
+    registry = _build_action_registry(allow_general=allow_general)
 
     dispatch_context = {
         "task": task,
@@ -486,9 +495,15 @@ def _dispatch(plan: dict, img_path: str, app_name: str, task: str, runtime) -> d
             valid_params = set(sig.parameters.keys())
             args = {k: v for k, v in args.items() if k in valid_params}
             result = func(**args)
-        else:
+        elif allow_general:
             sub_task = plan.get("sub_task", plan.get("task", plan.get("target", str(plan)[:200])))
             result = general_action(sub_task=sub_task, task_context=f"<task>{task}</task>", runtime=runtime)
+        else:
+            result = {
+                "success": False,
+                "error": f"Action '{action_name}' not available in GUI-only mode. "
+                         f"Pick a GUI action: {sorted(registry)}",
+            }
     except Exception as e:
         result = {"success": False, "error": str(e)}
 
@@ -500,8 +515,7 @@ def _dispatch(plan: dict, img_path: str, app_name: str, task: str, runtime) -> d
 # ═══════════════════════════════════════════
 
 @agentic_function(
-    compress=True,
-    summarize={"siblings": -1},
+    render_range={"siblings": -1},
     input={
         "task": {"description": "The overall task being performed"},
         "feedback": {"description": "Structured result from previous step (None for first step)"},
@@ -514,6 +528,7 @@ def gui_step(
     feedback: Optional[dict],
     app_name: str,
     runtime=None,
+    allow_general: bool = True,
 ) -> dict:
     """Execute one step of a GUI task: observe -> verify -> plan -> action.
 
@@ -573,7 +588,7 @@ def gui_step(
         # Plan always runs and makes the final "done" decision.
 
     # ── 3. Plan next action (LLM) ──
-    registry = _build_action_registry()
+    registry = _build_action_registry(allow_general=allow_general)
     catalog = build_catalog(registry)
 
     verification_summary = ""
@@ -605,7 +620,7 @@ def gui_step(
         }
 
     # ── 4. Action (pure Python dispatch) ──
-    exec_result = _dispatch(plan, obs["img_path"], app_name, task, runtime)
+    exec_result = _dispatch(plan, obs["img_path"], app_name, task, runtime, allow_general=allow_general)
 
     return {
         "done": False,
@@ -649,7 +664,7 @@ def build_step_feedback(result: dict) -> dict:
 # conclusion — LLM summarizes the task result
 # ═══════════════════════════════════════════
 
-@agentic_function(summarize={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"depth": 0, "siblings": 0})
 def conclusion(task: str, completed: bool, steps_taken: int, runtime=None) -> dict:
     """Summarize what was accomplished during the GUI task.
 
@@ -708,10 +723,27 @@ def save_workflow_record(result: dict, app_name: str):
 # Backward-compatible wrapper (for benchmarks)
 # ═══════════════════════════════════════════
 
-def execute_task(task: str, runtime=None, max_steps: int = 30, app_name: str = "desktop") -> dict:
+def execute_task(
+    task: str,
+    runtime=None,
+    max_steps: int = 30,
+    app_name: str = "desktop",
+    work_dir: Optional[str] = None,
+    allow_general: bool = True,
+) -> dict:
     """Execute a GUI task. Thin wrapper around gui_agent for backward compatibility.
 
-    Prefer using gui_agent() directly for new code.
+    Prefer using gui_agent() directly for new code — configure the runtime's
+    work_dir on the runtime before calling.
+
+    If work_dir is omitted, a fresh tempdir is created and set on the runtime.
     """
+    import os, tempfile
     from gui_harness.main import gui_agent
-    return gui_agent(task=task, max_steps=max_steps, app_name=app_name, runtime=runtime)
+    if work_dir is None:
+        work_dir = tempfile.mkdtemp(prefix="gui_harness_")
+    work_dir = os.path.abspath(os.path.expanduser(work_dir))
+    os.makedirs(work_dir, exist_ok=True)
+    if runtime is not None and hasattr(runtime, "set_workdir"):
+        runtime.set_workdir(work_dir)
+    return gui_agent(task=task, max_steps=max_steps, app_name=app_name, runtime=runtime, allow_general=allow_general)
