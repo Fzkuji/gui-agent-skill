@@ -1,21 +1,22 @@
 # OSWorld GIMP Domain - GPT-5.5 Run Errors
 
-> 26 tasks | **50%** (5/10 evaluated) | 2026-05-17
+> 26 tasks | **38.9%** (7/18 evaluated) | 2026-05-17 to 2026-05-18
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
 | Total tasks | 26 |
-| Evaluated | 10 |
-| Pass (1.0) | 5 |
-| Fail (0.0) | 5 |
-| Not reached | 16 |
-| Score so far | 50% (5/10) |
+| Evaluated | 18 |
+| Pass (1.0) | 7 |
+| Fail / eval error | 11 |
+| Interrupted / partial | 1 |
+| Not reached | 7 |
+| Score so far | 38.9% (7/18) |
 
 **Test environment:** Ubuntu VM at `172.16.105.130`, 1920x1080, `openai-codex/gpt-5.5` via GUI Agent Harness
 
-**Repo state:** `b6cd6ea` when the run started; this document was later pushed in commit `44cf59f`.
+**Repo state:** `b6cd6ea` when the original run started; doc formatting pushed at `33a3855`.
 
 **Run directory:** `runs/gimp_all_20260517_194037`
 
@@ -37,14 +38,24 @@
 | 1 | 7a4deb26 | Tone down photo brightness | 0.0 FAIL | 8 | 175s | Runner said SUCCESS, evaluator missed `edited_darker.png`; model session errors |
 | 2 | 554785e9 | Enhance color vibrancy | 1.0 PASS | 6 | 121s | Recovered from one `plan_next_action` model error |
 | 3 | 77b8ab4d | Export photo to desktop as `export.jpg` | 1.0 PASS | 7 | 135s | No blocking error beyond missing proxy config warning |
-| 4 | f4aec372 | Place yellow triangle at picture center | 0.0 FAIL | 15 | 198s | Drag target not found; screenshot read then failed repeatedly; output file missing |
+| 4 | f4aec372 | Place yellow triangle at picture center | 0.0 FAIL | 15 | 198s | Drag target not found; screenshot read cascade; output file missing |
 | 5 | d52d6308 | Remove GIMP left dock | 1.0 PASS | 3 | 175s | No blocking error beyond missing proxy config warning |
-| 6 | 2a729ded | Make image background transparent | 0.0 FAIL | 15 | 328s | HuggingFace download retries; `verify_step` model error; screenshot read cascade; output file missing |
+| 6 | 2a729ded | Make image background transparent | 0.0 FAIL | 15 | 328s | Download retries; model error; screenshot read cascade; output file missing |
 | 7 | b148e375 | Add a new layer named `Square` | 1.0 PASS | 5 | 91s | Recovered from one `plan_next_action` model error |
 | 8 | a746add2 | Open Vignette filter window | 1.0 PASS | 8 | 291s | Recovered from model errors in target lookup / verification |
 | 9 | 7b7617bd | Set minimum undo steps to 100 | 0.0 FAIL | 15 | 205s | Multiple model errors; screenshot read cascade; evaluator failed to get GIMP config |
 | 10 | d16c99dc | Resize dog layer height to 512 px | 0.0 FAIL | 15 | n/a | Download retries; model error; screenshot read cascade; evaluator missed `resized.png`; interrupted after score |
-| 11-26 | - | Not reached | - | - | - | Batch stopped after task 10 |
+| 11 | 06ca5602 | Set image to Palette-Based | 1.0 PASS | 8 | 211s | Download retries, but output passed palette/structure evaluator |
+| 12 | e2dd0213 | Shift text box to the left | 0.0 FAIL | 7 | 129s | Runner said SUCCESS, evaluator score 0.0; model errors during planning/verification |
+| 13 | f723c744 | Increase picture contrast | 0.0 FAIL | 8 | 174s | Runner said SUCCESS, evaluator missed `berries_contrast.png`; invalid image at conclusion |
+| 14 | 72f83cdc | Mirror figure horizontally | 0.0 FAIL | 15 | 193s | Screenshot read cascade; evaluator missed `berry_mirror.png` |
+| 15 | 7767eef2 | Change GIMP theme from dark to light | 1.0 PASS | 8 | 149s | Recovered from one `verify_step` model error |
+| 16 | 734d6579 | Fill background layer green | 0.0 FAIL | 15 | 152s | Screenshot read cascade; evaluator missed `green_background_with_object.png` |
+| 17 | e19bd559 | Tone down desktop photo brightness | N/A EVAL_ERROR | 15 | 389s | Automatic evaluator marked infeasible; runner failed after searching desktop |
+| 18 | 38f48d40 | Trim video in GIMP | N/A EVAL_ERROR | 15 | 198s | Infeasible for GIMP; screenshot read cascade; automatic evaluator cannot score |
+| 19 | fbb548ca | Change GIMP color theme to blue | partial | - | - | Started and reached Preferences/Icon Theme flow, then interrupted before result |
+| 20 | - | Not reached | - | - | - | Not run yet |
+| 21-26 | - | Not reached | - | - | - | Not run yet |
 
 ## Error Details
 
@@ -53,28 +64,44 @@
 | 1 | `verify_step()` and `conclusion()` returned `Agent session failed` | HuggingFace SSL EOF retry | Missing `/home/user/Desktop/edited_darker.png`; score 0.0 | `task_1.log` |
 | 2 | `plan_next_action()` returned `Agent session failed` | Recovered on later steps | PASS; score 1.0 | `task_2.log` |
 | 3 | No blocking error observed | Missing proxy config warning only | PASS; score 1.0 | `task_3.log` |
-| 4 | Drag target failed: `End not found: center of the white canvas` | `/tmp/gui_agent_screen.png` read errors; `need at least one array to stack` on steps 3-15; `conclusion()` model error | Missing `/home/user/Desktop/Triangle_In_The_Middle.png`; score 0.0 | `task_4.log` |
+| 4 | Drag target failed: `End not found: center of the white canvas` | `/tmp/gui_agent_screen.png` read errors; `need at least one array to stack` on steps 3-15; conclusion model error | Missing `/home/user/Desktop/Triangle_In_The_Middle.png`; score 0.0 | `task_4.log` |
 | 5 | No blocking error observed | Missing proxy config warning only | PASS; score 1.0 | `task_5.log` |
-| 6 | `verify_step()` returned `Agent session failed` | HuggingFace timeout / SSL EOF retries; screenshot read errors on steps 5-15; `conclusion()` model error | Missing `/home/user/Desktop/dog_without_background.png`; score 0.0 | `task_6.log` |
+| 6 | `verify_step()` returned `Agent session failed` | HuggingFace timeout / SSL EOF retries; screenshot read errors on steps 5-15; conclusion model error | Missing `/home/user/Desktop/dog_without_background.png`; score 0.0 | `task_6.log` |
 | 7 | `plan_next_action()` returned `Agent session failed` | Recovered on later steps | PASS; score 1.0 | `task_7.log` |
 | 8 | `find_target_in_known()` and `verify_step()` returned `Agent session failed` | Recovered by coordinate fallback and later actions | PASS; score 1.0 | `task_8.log` |
-| 9 | Multiple `plan_next_action()` / `verify_step()` model errors | Screenshot read errors on steps 13-15; `conclusion()` got HTTP 400 invalid image | Failed to get GIMP config; score 0.0 | `task_9.log` |
-| 10 | `verify_step()` / `conclusion()` model path failed | HuggingFace SSL EOF retries; screenshot read errors on steps 8-15; `conclusion()` got HTTP 400 invalid image | Missing `/home/user/Desktop/resized.png`; score 0.0 | `task_10.log` |
+| 9 | Multiple `plan_next_action()` / `verify_step()` model errors | Screenshot read errors on steps 13-15; conclusion got HTTP 400 invalid image | Failed to get GIMP config; score 0.0 | `task_9.log` |
+| 10 | `verify_step()` / `conclusion()` model path failed | HuggingFace SSL EOF retries; screenshot read errors on steps 8-15; conclusion got HTTP 400 invalid image | Missing `/home/user/Desktop/resized.png`; score 0.0 | `task_10.log` |
+| 11 | No final failure | HuggingFace download SSL/timeout retries during setup | PASS; score 1.0 | `task_11.log` |
+| 12 | `plan_next_action()` and `verify_step()` returned `Agent session failed` | Runner still produced a file | Evaluator score 0.0 despite runner SUCCESS | `task_12.log` |
+| 13 | `verify_step()` returned `Agent session failed` | Conclusion got HTTP 400 invalid image | Missing `/home/user/Desktop/berries_contrast.png`; score 0.0 | `task_13.log` |
+| 14 | Screenshot became unreadable after export flow | `need at least one array to stack` on steps 10-15; conclusion got HTTP 400 invalid image | Missing `/home/user/Desktop/berry_mirror.png`; score 0.0 | `task_14.log` |
+| 15 | `verify_step()` returned `Agent session failed` once | Recovered and changed theme | PASS; score 1.0 | `task_15.log` |
+| 16 | Screenshot became unreadable after early actions | `need at least one array to stack` on steps 7-15; conclusion invalid image | Missing `/home/user/Desktop/green_background_with_object.png`; score 0.0 | `task_16.log` |
+| 17 | Task target likely unavailable / hard to identify on desktop | Multiple model errors while searching Files/Desktop | Evaluator infeasible, score N/A; runner failed | `task_17.log` |
+| 18 | Task is semantically infeasible for GIMP video trimming | Model opened dialogs and later screenshot read cascade | Evaluator infeasible, score N/A; runner failed | `task_18.log` |
+| 19 | Run interrupted before result | Had reached GIMP Preferences and icon/theme navigation | No evaluator result yet | `task_19.log` |
 
 ## Error Categories
 
 | Category | Affected tasks | Evidence | Notes |
 |----------|----------------|----------|-------|
-| Opaque model/session failure | 1, 2, 4, 6, 7, 8, 9, 10 | `RuntimeError: Agent session failed` | The detailed traceback/error-message fix does not appear active in the dependency path used by this run. |
-| Invalid image passed to model | 9, 10 | OpenAI HTTP 400: image data is not a valid image | Usually appears after screenshot read failures. |
-| Screenshot/read cascade | 4, 6, 9, 10 | `WARNING Image Read Error /tmp/gui_agent_screen.png`; `ValueError: need at least one array to stack` | Likely secondary after an earlier action/model failure. |
-| Expected output missing | 1, 4, 6, 10 | Evaluator cannot retrieve expected desktop file | Could be execution failure, export failure, or filename/path mismatch. |
-| HuggingFace asset download instability | 1, 6, 10 | SSL EOF, read timeout, curl fallback | Setup eventually recovered on 6 and 10, but with long delays. |
-| Missing proxy config warning | 1-10 | `evaluation_examples/settings/proxy/dataimpulse.json` not found | Non-blocking for passing tasks 2, 3, 5, 7, 8. |
+| Opaque model/session failure | 1, 2, 4, 6, 7, 8, 9, 10, 12, 13, 15, 17, 18 | `RuntimeError: Agent session failed` | Not always fatal; some tasks recover, some cascade into bad screenshots or bad outputs. |
+| Invalid image passed to model | 9, 10, 13, 14, 16, 18 | OpenAI HTTP 400: image data is not a valid image | Usually appears after screenshot read failures or a corrupted screenshot artifact. |
+| Screenshot/read cascade | 4, 6, 9, 10, 14, 16, 18 | `WARNING Image Read Error /tmp/gui_agent_screen.png`; `ValueError: need at least one array to stack` | Likely secondary after an earlier action/model failure. |
+| Expected output missing | 1, 4, 6, 10, 13, 14, 16 | Evaluator cannot retrieve expected desktop file | Could be execution failure, export failure, or filename/path mismatch. |
+| Runner success but evaluator fail | 1, 12, 13 | Runner prints SUCCESS but score is 0.0 | Treat evaluator as source of truth for benchmark score. |
+| Infeasible / unscorable tasks | 17, 18 | Evaluator returns N/A / infeasible | These need separate policy for manual scoring or exclusion. |
+| HuggingFace asset download instability | 1, 6, 10, 11, 13, 16 | SSL EOF, read timeout, curl fallback | Setup usually recovers, but adds long delays and noise. |
+| Missing proxy config warning | 1-19 | `evaluation_examples/settings/proxy/dataimpulse.json` not found | Non-blocking for passing tasks; likely environment warning. |
+| Expired auth profile | During task13-20 retry | `openai-codex:default` expired on 2026-05-10 while `openai-codex:fzkuji+alt1@gmail.com` was valid | Removed expired profile and fixed auth order so only the valid profile remains. |
 
 ## Handoff Notes
 
-- Confirm which OpenProgram / OpenAICodexRuntime revision is installed in `.venv`; the traceback-improvement commit does not appear active in these logs.
-- Debug why a failed `verify_step()` or locate/drag failure leaves `/tmp/gui_agent_screen.png` unreadable and causes repeated `need at least one array to stack`.
-- For failed export tasks 1, 4, 6, and 10, check whether the VM desktop contains a differently named output file after failure.
+- The expired `openai-codex:default` profile was removed from `~/.openclaw/agents/main/agent/auth-profiles.json`; `auth-state.json` order now points only to `openai-codex:fzkuji+alt1@gmail.com`.
+- Confirm why `Agent session failed` still appears without detailed traceback in runner logs; the traceback-improvement patch may not be active in this dependency path.
+- Debug why a failed `verify_step()`, export, or locate/drag failure leaves `/tmp/gui_agent_screen.png` unreadable and causes repeated `need at least one array to stack`.
+- For failed export tasks 1, 4, 6, 10, 13, 14, and 16, check whether the VM desktop contains a differently named output file after failure.
+- Treat evaluator score as benchmark truth. Several tasks print runner SUCCESS while official evaluator returns 0.0.
+- Decide how to handle infeasible/unscorable tasks 17 and 18 before calculating final GIMP score.
 - Consider pre-caching HuggingFace OSWorld assets before full batch runs; setup download instability adds minutes and noise.
+
