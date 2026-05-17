@@ -1,18 +1,20 @@
 # OSWorld GIMP Domain - GPT-5.5 Run Errors
 
-> 26 tasks | **38.9%** (7/18 evaluated) | 2026-05-17 to 2026-05-18
+> 26 tasks | **43.8%** (7/16 officially scored) | 2026-05-17 to 2026-05-18
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
 | Total tasks | 26 |
-| Evaluated | 18 |
+| Officially scored | 16 |
 | Pass (1.0) | 7 |
-| Fail / eval error | 11 |
-| Interrupted / partial | 1 |
-| Not reached | 7 |
-| Score so far | 38.9% (7/18) |
+| Numeric fail (0.0) | 9 |
+| Eval error / N/A | 10 |
+| Interrupted / partial | 0 |
+| Not reached | 0 |
+| Official scored pass rate | 43.8% (7/16) |
+| Full-domain pass count | 26.9% (7/26) |
 
 **Test environment:** Ubuntu VM at `172.16.105.130`, 1920x1080, `openai-codex/gpt-5.5` via GUI Agent Harness
 
@@ -53,9 +55,14 @@
 | 16 | 734d6579 | Fill background layer green | 0.0 FAIL | 15 | 152s | Screenshot read cascade; evaluator missed `green_background_with_object.png` |
 | 17 | e19bd559 | Tone down desktop photo brightness | N/A EVAL_ERROR | 15 | 389s | Automatic evaluator marked infeasible; runner failed after searching desktop |
 | 18 | 38f48d40 | Trim video in GIMP | N/A EVAL_ERROR | 15 | 198s | Infeasible for GIMP; screenshot read cascade; automatic evaluator cannot score |
-| 19 | fbb548ca | Change GIMP color theme to blue | partial | - | - | Started and reached Preferences/Icon Theme flow, then interrupted before result |
-| 20 | - | Not reached | - | - | - | Not run yet |
-| 21-26 | - | Not reached | - | - | - | Not run yet |
+| 19 | fbb548ca | Change GIMP color theme to blue | N/A EVAL_ERROR | 15 | 277s | Automatic evaluator marked infeasible; runner failed |
+| 20 | 5ca86c6f | Download University of Hong Kong logo as PNG using GIMP | N/A EVAL_ERROR | 15 | 209s | Automatic evaluator marked infeasible; model error followed by screenshot read cascade and invalid image conclusion |
+| 21 | 62f7fd55 | Convert `/home/user/logo.png` to SVG by GIMP | N/A EVAL_ERROR | 15 | 230s | Automatic evaluator marked infeasible; model session error |
+| 22 | 8ea73f6f | Enhance low-res photo without increasing file size | N/A EVAL_ERROR | 15 | 345s | Automatic evaluator marked infeasible; screenshot read cascade and conclusion model error |
+| 23 | 58d3eeeb | Translate hidden audio conversation into French | N/A EVAL_ERROR | 15 | 772s | Automatic evaluator marked infeasible; repeated model session errors |
+| 24 | 2e6f678f | Batch increase desktop image brightness to 50 | N/A EVAL_ERROR | 15 | 397s | Automatic evaluator marked infeasible; model error followed by screenshot read cascade |
+| 25 | 045bf3ff | Turn image into CYMK mode within GIMP | N/A EVAL_ERROR | 15 | 187s | Automatic evaluator marked infeasible; screenshot read cascade and invalid image conclusion |
+| 26 | dbbf4b99 | Convert RAW image into JPEG using GIMP | N/A EVAL_ERROR | 15 | 203s | First attempt hit setup download timeout; retry reached evaluator but task was marked infeasible |
 
 ## Error Details
 
@@ -79,20 +86,28 @@
 | 16 | Screenshot became unreadable after early actions | `need at least one array to stack` on steps 7-15; conclusion invalid image | Missing `/home/user/Desktop/green_background_with_object.png`; score 0.0 | `task_16.log` |
 | 17 | Task target likely unavailable / hard to identify on desktop | Multiple model errors while searching Files/Desktop | Evaluator infeasible, score N/A; runner failed | `task_17.log` |
 | 18 | Task is semantically infeasible for GIMP video trimming | Model opened dialogs and later screenshot read cascade | Evaluator infeasible, score N/A; runner failed | `task_18.log` |
-| 19 | Run interrupted before result | Had reached GIMP Preferences and icon/theme navigation | No evaluator result yet | `task_19.log` |
+| 19 | Automatic evaluator marked task infeasible | Runner exhausted 15 steps | Score N/A; runner failed | `task_19.log` |
+| 20 | `verify_step()` returned `Agent session failed` | Screenshot read errors on steps 12-15; conclusion got HTTP 400 invalid image | Score N/A; runner failed | `task_20.log` |
+| 21 | `verify_step()` returned `Agent session failed` | Runner exhausted 15 steps | Score N/A; runner failed | `task_21.log` |
+| 22 | Screenshot became unreadable after mid-run actions | `need at least one array to stack` on steps 8-15; conclusion model error | Score N/A; runner failed | `task_22.log` |
+| 23 | Repeated `plan_next_action()` / `verify_step()` model errors | Runner attempted terminal/forensic work but exhausted 15 steps | Score N/A; runner failed | `task_23.log` |
+| 24 | Screenshot became unreadable after early actions | `need at least one array to stack` on steps 8-15; conclusion model error | Score N/A; runner failed | `task_24.log` |
+| 25 | Screenshot became unreadable after opening CMYK flow | `need at least one array to stack` on steps 5-15; conclusion got HTTP 400 invalid image | Score N/A; runner failed | `task_25.log` |
+| 26 | Initial setup attempt timed out downloading `yicun.raw`; retry exhausted steps in file type/export flow | `verify_step()` returned `Agent session failed` once | Score N/A; runner failed | `task_26.log` |
 
 ## Error Categories
 
 | Category | Affected tasks | Evidence | Notes |
 |----------|----------------|----------|-------|
-| Opaque model/session failure | 1, 2, 4, 6, 7, 8, 9, 10, 12, 13, 15, 17, 18 | `RuntimeError: Agent session failed` | Not always fatal; some tasks recover, some cascade into bad screenshots or bad outputs. |
-| Invalid image passed to model | 9, 10, 13, 14, 16, 18 | OpenAI HTTP 400: image data is not a valid image | Usually appears after screenshot read failures or a corrupted screenshot artifact. |
-| Screenshot/read cascade | 4, 6, 9, 10, 14, 16, 18 | `WARNING Image Read Error /tmp/gui_agent_screen.png`; `ValueError: need at least one array to stack` | Likely secondary after an earlier action/model failure. |
+| Opaque model/session failure | 1, 2, 4, 6, 7, 8, 9, 10, 12, 13, 15, 17, 18, 20, 21, 22, 23, 24, 26 | `RuntimeError: Agent session failed` | Not always fatal; some tasks recover, some cascade into bad screenshots or bad outputs. |
+| Invalid image passed to model | 9, 10, 13, 14, 16, 18, 20, 25 | OpenAI HTTP 400: image data is not a valid image | Usually appears after screenshot read failures or a corrupted screenshot artifact. |
+| Screenshot/read cascade | 4, 6, 9, 10, 14, 16, 18, 20, 22, 24, 25 | `WARNING Image Read Error /tmp/gui_agent_screen.png`; `ValueError: need at least one array to stack` | Likely secondary after an earlier action/model failure. |
 | Expected output missing | 1, 4, 6, 10, 13, 14, 16 | Evaluator cannot retrieve expected desktop file | Could be execution failure, export failure, or filename/path mismatch. |
 | Runner success but evaluator fail | 1, 12, 13 | Runner prints SUCCESS but score is 0.0 | Treat evaluator as source of truth for benchmark score. |
-| Infeasible / unscorable tasks | 17, 18 | Evaluator returns N/A / infeasible | These need separate policy for manual scoring or exclusion. |
-| HuggingFace asset download instability | 1, 6, 10, 11, 13, 16 | SSL EOF, read timeout, curl fallback | Setup usually recovers, but adds long delays and noise. |
-| Missing proxy config warning | 1-19 | `evaluation_examples/settings/proxy/dataimpulse.json` not found | Non-blocking for passing tasks; likely environment warning. |
+| Infeasible / unscorable tasks | 17-26 | Evaluator returns N/A / infeasible | Exclude from official scored pass rate unless a separate manual scoring policy is adopted. |
+| HuggingFace asset download instability | 1, 6, 10, 11, 13, 16, 26 | SSL EOF, read timeout, curl fallback | Setup usually recovers, but task 26 first attempt timed out before retry succeeded. |
+| Setup/download timeout | 26 | First task 26 attempt ended `SETUP_DOWNLOAD_TIMEOUT` after repeated HuggingFace failures | Retried in-place and overwrote `task_26.log` with completed evaluator run per handoff policy. |
+| Missing proxy config warning | 1-26 | `evaluation_examples/settings/proxy/dataimpulse.json` not found | Non-blocking for passing tasks; likely environment warning. |
 | Expired auth profile | During task13-20 retry | `openai-codex:default` expired on 2026-05-10 while `openai-codex:fzkuji+alt1@gmail.com` was valid | Removed expired profile and fixed auth order so only the valid profile remains. |
 
 ## Handoff Notes
@@ -102,6 +117,6 @@
 - Debug why a failed `verify_step()`, export, or locate/drag failure leaves `/tmp/gui_agent_screen.png` unreadable and causes repeated `need at least one array to stack`.
 - For failed export tasks 1, 4, 6, 10, 13, 14, and 16, check whether the VM desktop contains a differently named output file after failure.
 - Treat evaluator score as benchmark truth. Several tasks print runner SUCCESS while official evaluator returns 0.0.
-- Decide how to handle infeasible/unscorable tasks 17 and 18 before calculating final GIMP score.
+- Final GIMP accounting: 7 PASS, 9 numeric FAIL, and 10 evaluator N/A/infeasible. Official scored pass rate is 7/16; full-domain non-pass accounting is 7/26.
+- Decide whether infeasible/unscorable tasks 17-26 should be manually scored, excluded, or counted as non-pass in downstream reporting.
 - Consider pre-caching HuggingFace OSWorld assets before full batch runs; setup download instability adds minutes and noise.
-
