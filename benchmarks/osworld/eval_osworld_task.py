@@ -107,9 +107,12 @@ def main():
         score = 1.0 if declared else 0.0
     else:
         from eval_only import EvalOnlyEnv
-        env = EvalOnlyEnv(vm_ip=args.vm, server_port=VM_PORT, task_id=task_config["id"])
         try:
             with pushd(OSWORLD_DIR):
+                # EvalOnlyEnv uses a relative cache_dir. Construct it after
+                # switching to OSWorld so getters write into the same cache
+                # tree that was created during initialization.
+                env = EvalOnlyEnv(vm_ip=args.vm, server_port=VM_PORT, task_id=task_config["id"])
                 env.load_task(task_config)
                 score = float(env.evaluate())
         except Exception as e:
