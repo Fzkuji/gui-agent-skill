@@ -142,7 +142,7 @@ def gui_agent(
             or args.get("sub_task", "")
             or plan.get("target", "")
         )
-        print(f"  [step {step_num}] {action}: {str(detail)[:80]}", file=sys.stderr)
+        print(f"  [step {step_num}] {action}: {str(detail)[:200]}", file=sys.stderr)
 
         history.append({"step": step_num, **result})
 
@@ -172,7 +172,7 @@ def gui_agent(
             steps_taken=len(history),
             runtime=runtime,
         )
-        print(f"  [conclusion] {summary.get('summary', '')[:80]}", file=sys.stderr)
+        print(f"  [conclusion] {summary.get('summary', '')[:300]}", file=sys.stderr)
     except Exception as e:
         print(f"  [conclusion] ERROR: {e}", file=sys.stderr)
         summary = {"summary": str(e), "success": completed, "issues": None}
@@ -266,11 +266,11 @@ def main():
         exec_ok = h.get("exec_result", {}).get("success", h.get("done", False))
         v = h.get("verification")
         status = "OK" if exec_ok else "FAIL"
-        print(f"  {h['step']}. [{status}] {action}: {str(detail)[:60]}")
+        print(f"  {h['step']}. [{status}] {action}: {str(detail)[:200]}")
         if plan.get("goal"):
-            print(f"     goal: {plan['goal'][:60]}")
+            print(f"     goal: {plan['goal'][:200]}")
         if v and v.get("observation"):
-            print(f"     observed: {v['observation'][:60]}")
+            print(f"     observed: {v['observation'][:200]}")
     print("=" * 60)
 
 
