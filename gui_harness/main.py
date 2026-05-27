@@ -29,7 +29,6 @@ from gui_harness.constants import GUI_SYSTEM_PROMPT
 @agentic_function(
     as_tool=True,
     toolset=("harness",),
-    render_range={"siblings": -1},
     system=GUI_SYSTEM_PROMPT,
     input={
         "task": {

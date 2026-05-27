@@ -19,7 +19,7 @@ except Exception:  # standalone gui_harness usage — no webui layer
         return None
 
 
-@agentic_function(render_range={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"callers": 0})
 def observe(task: str, app_name: str = None, runtime=None) -> dict:
     """Observe the current screen — classify the app's page/state and locate the task target."""
     if runtime is None:

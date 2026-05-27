@@ -15,7 +15,7 @@ from __future__ import annotations
 from gui_harness.openprogram_compat import agentic_function
 
 
-@agentic_function(render_range={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"callers": 0})
 def general_action(sub_task: str, task_context: str = "", runtime=None) -> dict:
     """Execute a free-form sub-task on a remote Ubuntu VM using any available tools."""
     from gui_harness.utils import parse_json

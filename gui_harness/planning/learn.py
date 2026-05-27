@@ -267,7 +267,7 @@ def _run_tour_action(action) -> None:
         raise ValueError(f"Unknown tour action: {kind}")
 
 
-@agentic_function(render_range={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"callers": 0})
 def _batch_label(
     app_name: str,
     icons: list[dict],

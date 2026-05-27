@@ -12,7 +12,7 @@ from gui_harness.openprogram_compat import agentic_function
 from gui_harness.perception import screenshot, ocr
 
 
-@agentic_function(render_range={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"callers": 0})
 def verify(expected: str, runtime=None) -> dict:
     """Verify whether the previous action produced the expected result."""
     if runtime is None:

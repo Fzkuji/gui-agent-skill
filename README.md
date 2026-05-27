@@ -288,7 +288,7 @@ GUI Agent Harness is built on [OpenProgram](https://github.com/Fzkuji/OpenProgra
 ```python
 from openprogram import agentic_function
 
-@agentic_function(render_range={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"callers": 0, "subcalls": 0})
 def plan_next_action(task, img_path, ..., runtime=None) -> dict:
     """Decide the next action to take toward completing the task."""
     # The per-call instruction + screen data are built into `context`.

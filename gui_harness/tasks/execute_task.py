@@ -389,7 +389,7 @@ def _observe(app_name: str) -> dict:
 # ═══════════════════════════════════════════
 
 @agentic_function(
-    render_range={"depth": 0, "siblings": 0},
+    render_range={"callers": 0},
     input={
         "task": {"description": "The overall task being performed"},
         "img_path": {"description": "Path to current screenshot (after previous action)"},
@@ -488,7 +488,6 @@ def verify_step(
 # ═══════════════════════════════════════════
 
 @agentic_function(
-    render_range={"depth": 0, "siblings": 0},
     input={
         "task": {"description": "The overall task being performed"},
         "img_path": {"description": "Path to current screenshot"},
@@ -698,7 +697,6 @@ def _dispatch(plan: dict, img_path: str, app_name: str, task: str, runtime, allo
 # ═══════════════════════════════════════════
 
 @agentic_function(
-    render_range={"siblings": -1},
     input={
         "task": {"description": "The overall task being performed"},
         "feedback": {"description": "Structured result from previous step (None for first step)"},
@@ -896,7 +894,7 @@ def build_step_feedback(result: dict) -> dict:
 # conclusion — LLM summarizes the task result
 # ═══════════════════════════════════════════
 
-@agentic_function(render_range={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"callers": 0})
 def conclusion(task: str, completed: bool, steps_taken: int, runtime=None) -> dict:
     """Summarize what was accomplished during the GUI task."""
     if runtime is None:

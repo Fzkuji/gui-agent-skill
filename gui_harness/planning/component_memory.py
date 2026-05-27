@@ -25,6 +25,7 @@ import os
 import re
 import sys
 import time
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -35,12 +36,127 @@ from gui_harness.openprogram_compat import agentic_function
 
 from gui_harness.perception import screenshot, ocr, detector
 from gui_harness.memory import app_memory
+from gui_harness.planning import active_localization
 
 # ═══════════════════════════════════════════
 # Phase 1: Detection
 # ═══════════════════════════════════════════
 
-def detect_components(img_path: str, conf: float = 0.3) -> dict:
+def _dedupe_components(elements: list[dict], iou_threshold: float = 0.65) -> list[dict]:
+    """Deduplicate mapped detector/OCR elements, keeping higher-confidence boxes."""
+    kept: list[dict] = []
+    for element in sorted(elements, key=lambda e: e.get("confidence", 0), reverse=True):
+        if any(detector.compute_iou(element, existing) >= iou_threshold for existing in kept):
+            continue
+        kept.append(element)
+    return kept
+
+
+def _multiscale_regions(img_w: int, img_h: int) -> list[tuple[str, int, int, int, int]]:
+    """Return UI-biased regions for crop-and-resize detection."""
+    left_w = max(int(img_w * 0.28), 320)
+    right_x = min(int(img_w * 0.70), max(0, img_w - 480))
+    top_h = max(int(img_h * 0.22), 220)
+    bottom_y = min(int(img_h * 0.72), max(0, img_h - 320))
+    regions = [
+        ("top", 0, 0, img_w, min(img_h, top_h)),
+        ("left", 0, 0, min(img_w, left_w), img_h),
+        ("right", right_x, 0, img_w, img_h),
+        ("bottom", 0, bottom_y, img_w, img_h),
+        ("center", int(img_w * 0.18), int(img_h * 0.16), int(img_w * 0.82), int(img_h * 0.84)),
+    ]
+    unique: list[tuple[str, int, int, int, int]] = []
+    seen: set[tuple[int, int, int, int]] = set()
+    for name, x1, y1, x2, y2 in regions:
+        x1, y1 = max(0, x1), max(0, y1)
+        x2, y2 = min(img_w, x2), min(img_h, y2)
+        key = (x1, y1, x2, y2)
+        if x2 - x1 < 120 or y2 - y1 < 120 or key in seen:
+            continue
+        unique.append((name, x1, y1, x2, y2))
+        seen.add(key)
+    return unique
+
+
+def _detect_multiscale_components(
+    img_path: str,
+    img_w: int,
+    img_h: int,
+    conf: float = 0.18,
+    scale: int = 2,
+) -> tuple[list[dict], list[dict]]:
+    """Detect on enlarged UI regions and map boxes back to original pixels."""
+    img = cv2.imread(img_path)
+    if img is None:
+        return [], []
+
+    icons: list[dict] = []
+    texts: list[dict] = []
+    with tempfile.TemporaryDirectory(prefix="gui_harness_multiscale_") as tmp_dir:
+        for region_name, x1, y1, x2, y2 in _multiscale_regions(img_w, img_h):
+            crop = img[y1:y2, x1:x2]
+            if crop.size == 0:
+                continue
+            crop_scaled = cv2.resize(crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+            crop_path = str(Path(tmp_dir) / f"{region_name}.png")
+            cv2.imwrite(crop_path, crop_scaled)
+            try:
+                crop_icons, crop_texts, _merged, _cw, _ch = detector.detect_all(crop_path, conf=conf)
+            except Exception as exc:
+                print(
+                    f"  [locate] multiscale region {region_name} failed: {exc.__class__.__name__}: {exc}",
+                    file=sys.stderr,
+                )
+                continue
+
+            for icon in crop_icons:
+                mapped = dict(icon)
+                mapped["x"] = int(round(x1 + icon.get("x", 0) / scale))
+                mapped["y"] = int(round(y1 + icon.get("y", 0) / scale))
+                mapped["w"] = max(1, int(round(icon.get("w", 0) / scale)))
+                mapped["h"] = max(1, int(round(icon.get("h", 0) / scale)))
+                mapped["cx"] = mapped["x"] + mapped["w"] // 2
+                mapped["cy"] = mapped["y"] + mapped["h"] // 2
+                mapped["source"] = "gpa_detector_multiscale"
+                mapped["region"] = region_name
+                mapped["source_scale"] = scale
+                icons.append(mapped)
+
+            for text in crop_texts:
+                mapped = dict(text)
+                mapped["x"] = int(round(x1 + text.get("x", 0) / scale))
+                mapped["y"] = int(round(y1 + text.get("y", 0) / scale))
+                mapped["w"] = max(1, int(round(text.get("w", 0) / scale)))
+                mapped["h"] = max(1, int(round(text.get("h", 0) / scale)))
+                mapped["cx"] = mapped["x"] + mapped["w"] // 2
+                mapped["cy"] = mapped["y"] + mapped["h"] // 2
+                mapped["source"] = "vision_ocr_multiscale"
+                mapped["region"] = region_name
+                mapped["source_scale"] = scale
+                texts.append(mapped)
+
+    return icons, texts
+
+
+def _rank_icons_for_screenspot(icons: list[dict]) -> list[dict]:
+    """Prioritize plausible ScreenSpot-Pro UI controls for expensive labeling."""
+    def score(icon: dict) -> tuple[int, int, float]:
+        area = max(1, icon.get("w", 0) * icon.get("h", 0))
+        multiscale_rank = 0 if icon.get("source") == "gpa_detector_multiscale" else 1
+        # Prefer small/medium controls over full panels and huge containers.
+        if 64 <= area <= 12000:
+            area_rank = 0
+        elif area < 64:
+            area_rank = 1
+        else:
+            area_rank = 2
+        return (multiscale_rank, area_rank, -float(icon.get("confidence", 0)))
+
+    ranked = sorted(icons, key=score)
+    return ranked[: int(os.environ.get("GUI_HARNESS_SCREENSPOT_ICON_LIMIT", "40"))]
+
+
+def detect_components(img_path: str, conf: float = 0.3, multiscale: bool = False) -> dict:
     """Run GPA-GUI-Detector + OCR on a screenshot.
 
     Returns a dict with:
@@ -49,6 +165,16 @@ def detect_components(img_path: str, conf: float = 0.3) -> dict:
       - img_w, img_h: image dimensions
     """
     icons, texts, _merged, img_w, img_h = detector.detect_all(img_path, conf=conf)
+    if multiscale:
+        t0 = time.time()
+        extra_icons, extra_texts = _detect_multiscale_components(img_path, img_w, img_h)
+        icons = _dedupe_components(list(icons) + extra_icons)
+        texts = _dedupe_components(list(texts) + extra_texts, iou_threshold=0.75)
+        print(
+            f"  [locate] multiscale: +{len(extra_icons)} icons +{len(extra_texts)} texts "
+            f"-> {len(icons)} icons, {len(texts)} texts ({time.time() - t0:.2f}s)",
+            file=sys.stderr,
+        )
 
     # Sort icons by confidence descending — higher confidence = more likely interactive
     icons = sorted(icons, key=lambda e: e.get("confidence", 0), reverse=True)
@@ -358,7 +484,7 @@ def _deterministic_text_match(target: str, texts: list[dict]) -> Optional[dict]:
 # Phase 3: LLM decides from known components
 # ═══════════════════════════════════════════
 
-@agentic_function(render_range={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"callers": 0})
 def find_target_in_known(
     task: str,
     target: str,
@@ -495,7 +621,7 @@ Reply with ONLY this JSON object:
 # Phase 4: Label unknown components one by one
 # ═══════════════════════════════════════════
 
-@agentic_function(render_range={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"callers": 0})
 def label_single_component(
     task: str,
     target: str,
@@ -578,8 +704,10 @@ def label_unknown_components(
     temp_crops = []
 
     for i, icon in enumerate(icons):
-        # Skip tiny elements
-        if icon.get("w", 0) < 25 or icon.get("h", 0) < 25:
+        # Skip tiny elements. Multiscale detections have already been enlarged
+        # before detection, so keep smaller mapped boxes.
+        min_size = 8 if icon.get("source") == "gpa_detector_multiscale" else 25
+        if icon.get("w", 0) < min_size or icon.get("h", 0) < min_size:
             continue
 
         # Skip already-known components (matched in Phase 2)
@@ -593,7 +721,7 @@ def label_unknown_components(
         h = icon.get("h", 0)
 
         # Add padding
-        pad = 4
+        pad = 16 if icon.get("source") == "gpa_detector_multiscale" else 4
         y1 = max(0, y - pad)
         x1 = max(0, x - pad)
         y2 = min(screen_img.shape[0], y + h + pad)
@@ -683,6 +811,22 @@ def _cleanup_temp_crops(temp_crops: list[str]):
             pass
 
 
+def _active_localization_confident(location: Optional[dict]) -> bool:
+    """Return True when active localization produced enough evidence to stop."""
+    if not location or not active_localization.enabled():
+        return False
+    if os.environ.get("GUI_HARNESS_ACTIVE_EARLY_RETURN", "1").lower() not in {"1", "true", "yes"}:
+        return False
+
+    verifier = location.get("pre_click_verifier") or {}
+    if (
+        str(verifier.get("is_target", "")).lower() == "yes"
+        and str(verifier.get("suggestion", "")).lower() != "zoom"
+    ):
+        return True
+    return False
+
+
 # ═══════════════════════════════════════════
 # Main entry point: locate_target
 # ═══════════════════════════════════════════
@@ -723,9 +867,14 @@ def locate_target(
 
     # Phase 1: Detection
     t0 = time.time()
-    detection = detect_components(img_path)
+    use_multiscale = os.environ.get("GUI_HARNESS_MULTISCALE_DETECT", "").lower() in {"1", "true", "yes"}
+    detection = detect_components(img_path, multiscale=use_multiscale)
     icons = detection["icons"]
+    if use_multiscale:
+        icons = _rank_icons_for_screenspot(icons)
+        print(f"  [locate] multiscale shortlist: {len(icons)} icons for Phase 4", file=sys.stderr)
     texts = detection["texts"]
+    base_active_candidates = active_localization.build_candidates([], texts, icons)
     _timing["phase1_detect"] = round(time.time() - t0, 2)
     print(f"  [locate] Phase 1: {len(icons)} icons, {len(texts)} texts ({_timing['phase1_detect']}s)", file=sys.stderr)
 
@@ -758,12 +907,25 @@ def locate_target(
             f"  [locate] OCR match: name='{text_match.get('name', '?')}' at ({text_match.get('cx', 0)}, {text_match.get('cy', 0)})",
             file=sys.stderr,
         )
-        return {
+        located = {
             "cx": text_match.get("cx", 0),
             "cy": text_match.get("cy", 0),
             "name": text_match.get("name", target),
             "timing": _timing,
         }
+        located = active_localization.improve_location(
+            task=task,
+            target=target,
+            img_path=img_path,
+            img_w=detection["img_w"],
+            img_h=detection["img_h"],
+            candidates=base_active_candidates,
+            proposed=located,
+            runtime=runtime,
+            work_dir=os.environ.get("GUI_HARNESS_ACTIVE_LOC_DIR"),
+        ) or located
+        located["timing"] = _timing
+        return located
 
     # Phase 2: Memory matching
     t0 = time.time()
@@ -780,12 +942,26 @@ def locate_target(
             f"  [locate] Known match: name='{known_match.get('name', '?')}' at ({known_match.get('cx', 0)}, {known_match.get('cy', 0)})",
             file=sys.stderr,
         )
-        return {
+        active_candidates = active_localization.build_candidates(known_components, texts, icons)
+        located = {
             "cx": known_match.get("cx", 0),
             "cy": known_match.get("cy", 0),
             "name": known_match.get("name", target),
             "timing": _timing,
         }
+        located = active_localization.improve_location(
+            task=task,
+            target=target,
+            img_path=img_path,
+            img_w=detection["img_w"],
+            img_h=detection["img_h"],
+            candidates=active_candidates,
+            proposed=located,
+            runtime=runtime,
+            work_dir=os.environ.get("GUI_HARNESS_ACTIVE_LOC_DIR"),
+        ) or located
+        located["timing"] = _timing
+        return located
 
     # Also include OCR texts as "known" elements (they have labels + coordinates)
     all_known = list(known_components)
@@ -799,9 +975,11 @@ def locate_target(
             "confidence": 1.0,
             "source": "ocr",
         })
+    active_candidates = active_localization.build_candidates(known_components, texts, icons)
 
     # Phase 3: Ask LLM to find target in known components
     t0 = time.time()
+    phase3_direct_pixel_fallback = None
     if all_known:
         result = find_target_in_known(
             task=task,
@@ -817,7 +995,7 @@ def locate_target(
         print(f"  [locate] Phase 3: found={result.get('found', False)} ({_timing['phase3_llm']}s)", file=sys.stderr)
         if result.get("found"):
             print(f"  [locate] Phase 3 result: name='{result.get('name', '?')}' at ({result.get('cx', 0)}, {result.get('cy', 0)})", file=sys.stderr)
-            return {
+            located = {
                 "cx": result.get("cx", 0),
                 "cy": result.get("cy", 0),
                 "name": result.get("name", target),
@@ -826,6 +1004,29 @@ def locate_target(
                 "reasoning": result.get("reasoning", ""),
                 "timing": _timing,
             }
+            located = active_localization.improve_location(
+                task=task,
+                target=target,
+                img_path=img_path,
+                img_w=detection["img_w"],
+                img_h=detection["img_h"],
+                candidates=active_candidates,
+                proposed=located,
+                runtime=runtime,
+                work_dir=os.environ.get("GUI_HARNESS_ACTIVE_LOC_DIR"),
+            ) or located
+            located["timing"] = _timing
+            if _active_localization_confident(located):
+                print("  [locate] active localization confident; skipping Phase 4", file=sys.stderr)
+                return located
+            if use_multiscale:
+                phase3_direct_pixel_fallback = located
+                print(
+                    "  [locate] Phase 3 result deferred; trying multiscale candidates",
+                    file=sys.stderr,
+                )
+            else:
+                return located
 
     # Phase 4: Label unknown components one by one
     t0 = time.time()
@@ -845,7 +1046,35 @@ def locate_target(
 
     if found:
         found["timing"] = _timing
-    return found
+        found = active_localization.improve_location(
+            task=task,
+            target=target,
+            img_path=img_path,
+            img_w=detection["img_w"],
+            img_h=detection["img_h"],
+            candidates=active_candidates,
+            proposed=found,
+            runtime=runtime,
+            work_dir=os.environ.get("GUI_HARNESS_ACTIVE_LOC_DIR"),
+        ) or found
+        found["timing"] = _timing
+        return found
+    if phase3_direct_pixel_fallback:
+        print("  [locate] using deferred Phase 3 direct pixel fallback", file=sys.stderr)
+        phase3_direct_pixel_fallback = active_localization.improve_location(
+            task=task,
+            target=target,
+            img_path=img_path,
+            img_w=detection["img_w"],
+            img_h=detection["img_h"],
+            candidates=active_candidates,
+            proposed=phase3_direct_pixel_fallback,
+            runtime=runtime,
+            work_dir=os.environ.get("GUI_HARNESS_ACTIVE_LOC_DIR"),
+        ) or phase3_direct_pixel_fallback
+        phase3_direct_pixel_fallback["timing"] = _timing
+        return phase3_direct_pixel_fallback
+    return None
 
 
 def _extract_target_coordinates(target: str, img_w: int, img_h: int) -> Optional[dict]:
@@ -969,7 +1198,7 @@ def get_available_transitions(app_name: str, current_state: str) -> list[dict]:
     return available
 
 
-@agentic_function(render_range={"depth": 0, "siblings": 0})
+@agentic_function(render_range={"callers": 0})
 def select_transition(
     task: str,
     current_state: str,
