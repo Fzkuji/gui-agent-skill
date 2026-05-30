@@ -87,38 +87,51 @@ Full results: [benchmarks/osworld/multi_apps.md](benchmarks/osworld/multi_apps.m
 
 ### Step 1: Install GUI Agent Harness
 
-```bash
-pip install git+https://github.com/Fzkuji/GUI-Agent-Harness.git
-```
-
-All dependencies are installed automatically, including a pinned legacy-compatible [OpenProgram](https://github.com/Fzkuji/OpenProgram) commit, ultralytics (GPA-GUI-Detector), OpenCV, Pillow, etc. The package does not track OpenProgram's latest `main` branch during install.
-
-> **Local development**: if you want to use an existing old OpenProgram checkout, install it first (`pip install -e /path/to/OpenProgram`) and then run `pip install -e . --no-deps` inside this repo.
-
-For development (editable install):
+> **This harness is an OpenProgram program — it runs *inside* OpenProgram,
+> not on its own.** Install OpenProgram first, then add this harness to it.
+> (Installing this repo by itself will import-error on `openprogram`.)
 
 ```bash
-git clone https://github.com/Fzkuji/GUI-Agent-Harness.git
-cd GUI-Agent-Harness
-pip install -e .
+# 1. Install the host (one step, all platforms)
+pip install openprogram
+
+# 2. Add this harness — clones it into OpenProgram's functions/agentics/
+#    and installs the harness's own heavy deps (ultralytics→torch, OpenCV,
+#    Pillow, pynput …). Restart OpenProgram; it's auto-detected and
+#    `gui_agent` becomes available.
+openprogram programs install gui
 ```
 
-> **Warning — editable installs bake in absolute paths.** `pip install -e` writes the current project path into a `.pth` file in `site-packages`. If you later rename any parent folder, every `import gui_harness` breaks with `ModuleNotFoundError` until you rerun `pip install -e .` from the new location. The same applies to `openprogram` and to symlinks under `OpenProgram/openprogram/programs/applications/` that point into this repo — recreate them on move.
->
-> Canonical layout used by this repo's dev setup (as of 2026-04-19):
->
-> ```
-> ~/Documents/LLM Agent Harness/OpenProgram/              # pip install -e .  (install first)
-> ~/Documents/GUI Agent/GUI-Agent-Harness/                # pip install -e .  (this repo)
-> ~/Documents/Research-Agent-Harness/                     # pip install -e .
-> ```
->
-> Optional: if you want this repo to appear inside OpenProgram's application discovery, create a symlink manually. The CLI and benchmark runner do not require it:
->
-> ```bash
-> cd "$OPENPROGRAM_DIR/openprogram/programs/applications"
-> rm -f GUI-Agent-Harness && ln -s "$HARNESS_DIR" GUI-Agent-Harness
-> ```
+> **Platform note:** install + registration work on every OS, but the GUI
+> harness's screen-capture / input backends currently target **macOS / Linux**.
+> Running `gui_agent` on Windows isn't supported yet (the function registers,
+> but invoking it will report the unsupported backend).
+
+<details>
+<summary><b>Manual install / local development</b></summary>
+
+`programs install gui` just clones into OpenProgram's agentics folder and
+pip-installs the clone (resolving this repo's own `pyproject.toml` deps).
+By hand, or to develop in place:
+
+```bash
+# find OpenProgram's agentics folder
+AGENTICS=$(python -c "import openprogram,os;print(os.path.join(os.path.dirname(openprogram.__file__),'functions','agentics'))")
+
+# clone in (a real directory — no symlink; works on Windows too)
+git clone https://github.com/Fzkuji/GUI-Agent-Harness "$AGENTICS/GUI-Agent-Harness"
+
+# install this harness's deps (cv2 / ultralytics / … from its pyproject)
+pip install "$AGENTICS/GUI-Agent-Harness"
+```
+
+Note: `openprogram` is the **host**, not a dependency of this repo — it's
+always present at runtime (the harness loads from inside it), so this repo's
+`pyproject.toml` does not pin it. Installing this repo standalone (without
+OpenProgram) will `pip install` fine but fail at import with
+`ModuleNotFoundError: openprogram`.
+
+</details>
 
 ### Step 2: Set up an LLM provider
 
