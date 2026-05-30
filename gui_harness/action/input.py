@@ -31,6 +31,8 @@ import subprocess
 import time
 from typing import Optional
 
+from gui_harness.platform_info.dpi import ensure_dpi_aware
+
 HOST_SYSTEM = platform.system()  # "Darwin", "Windows", "Linux"
 
 # ═══════════════════════════════════════════
@@ -132,6 +134,7 @@ class LocalTarget(ActionTarget):
         return None
 
     def click(self, x, y, button="left", clicks=1):
+        ensure_dpi_aware()
         from pynput.mouse import Button, Controller
         mouse = Controller()
         mouse.position = (int(x), int(y))
@@ -141,10 +144,12 @@ class LocalTarget(ActionTarget):
         time.sleep(0.1)
 
     def move(self, x, y):
+        ensure_dpi_aware()
         from pynput.mouse import Controller
         Controller().position = (int(x), int(y))
 
     def drag(self, sx, sy, ex, ey, duration=0.5, button="left"):
+        ensure_dpi_aware()
         from pynput.mouse import Button, Controller
         mouse = Controller()
         btn = Button.right if button == "right" else Button.left

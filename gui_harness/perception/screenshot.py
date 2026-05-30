@@ -14,6 +14,8 @@ import subprocess
 import tempfile
 import time
 
+from gui_harness.platform_info.dpi import ensure_dpi_aware, screen_scale
+
 SYSTEM = platform.system()
 
 
@@ -36,6 +38,7 @@ def screenshot(path: str | None = None) -> str:
     unless the desktop is HiDPI-scaled). Callers mapping click coords to
     screenshot pixels should account for the per-platform scale factor.
     """
+    ensure_dpi_aware()  # unify ImageGrab (physical) + pynput click space on Windows
     path = path or _shot_path()
     if SYSTEM == "Darwin":
         subprocess.run(["/usr/sbin/screencapture", "-x", path],
@@ -163,8 +166,9 @@ def screenshot_region(out_path, method="auto", x1=None, y1=None, x2=None, y2=Non
         full = screenshot(_shot_path("_region_full.png"))
         from PIL import Image
         img = Image.open(full)
-        # Logical → Retina (2x)
-        crop = img.crop((x1 * 2, y1 * 2, x2 * 2, y2 * 2))
+        # Click-space (logical) coords → image pixels: scale up by display scale.
+        s = screen_scale()
+        crop = img.crop((int(x1 * s), int(y1 * s), int(x2 * s), int(y2 * s)))
         crop.save(out_path)
         return out_path
 
@@ -216,8 +220,8 @@ def _screenshot_by_anchors(out_path, anchor_start, anchor_end, padding=10):
         print(f"Could not find anchors: start='{anchor_start}', end='{anchor_end}'")
         return None
 
-    # Calculate crop bounds (Retina coordinates)
-    pad = padding * 2
+    # Calculate crop bounds (image pixels). padding is click-space → scale up.
+    pad = int(padding * screen_scale())
 
     if start_pos and end_pos:
         crop_x1 = min(start_pos[0], end_pos[0]) - pad
@@ -243,7 +247,9 @@ def _screenshot_by_anchors(out_path, anchor_start, anchor_end, padding=10):
 
     crop = img.crop((crop_x1, crop_y1, crop_x2, crop_y2))
     crop.save(out_path)
-    print(f"Anchored crop: ({crop_x1 // 2},{crop_y1 // 2})->({crop_x2 // 2},{crop_y2 // 2}) logical")
+    _s = screen_scale() or 1.0
+    print(f"Anchored crop: ({int(crop_x1 / _s)},{int(crop_y1 / _s)})->"
+          f"({int(crop_x2 / _s)},{int(crop_y2 / _s)}) logical")
     return out_path
 
 

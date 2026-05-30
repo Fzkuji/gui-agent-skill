@@ -108,8 +108,9 @@ openprogram programs install gui
 > the Win32 API on Windows / `wmctrl`+`xdotool` on Linux). The **advanced visual
 > perception** (Apple Accessibility window introspection and Apple Vision OCR) is
 > macOS-tuned; on Windows/Linux the agent falls back to YOLO UI detection +
-> EasyOCR. HiDPI coordinate scaling is currently calibrated for macOS Retina, so
-> pixel-precise clicks may need tuning on scaled Windows/Linux displays.
+> EasyOCR. HiDPI display scaling is handled automatically — the process is made
+> per-monitor DPI-aware on Windows and screenshot↔click coordinates are unified,
+> so clicks land correctly on scaled (125% / 150% / …) displays.
 
 <details>
 <summary><b>Manual install / local development</b></summary>
@@ -179,7 +180,7 @@ The system auto-detects the best available provider. You can also force one with
 **Windows:**
 - Install EasyOCR for text detection: `pip install easyocr`
 - Window focus / list / bounds use the built-in Win32 API (no extra install).
-- Visual perception is macOS-tuned; verify clicks on HiDPI-scaled displays.
+- Visual perception is macOS-tuned (Windows uses YOLO + EasyOCR). HiDPI display scaling is auto-detected, so clicks land correctly on scaled displays.
 
 ### Step 4: Run
 

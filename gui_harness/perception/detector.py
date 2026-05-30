@@ -83,18 +83,14 @@ class ImageContext:
 
 
 def _get_backing_scale_factor():
-    """Get Mac display backing scale factor (2.0 for Retina, 1.0 otherwise)."""
-    import platform as _plat
-    if _plat.system() != "Darwin":
-        return 1.0
-    try:
-        r = subprocess.run(
-            ["swift", "-e", 'import AppKit; print(NSScreen.main!.backingScaleFactor)'],
-            capture_output=True, text=True, timeout=10
-        )
-        return float(r.stdout.strip())
-    except Exception:
-        return 2.0
+    """Image-pixels-per-click-unit for the active display (cross-platform).
+
+    macOS Retina -> ~2.0; Windows HiDPI -> physical/logical (1.0 once the
+    process is DPI-aware); Linux / VM / remote -> 1.0. Delegates to
+    platform_info.dpi.screen_scale().
+    """
+    from gui_harness.platform_info.dpi import screen_scale
+    return screen_scale()
 
 
 # ── Legacy compat shims ── (DEPRECATED, kept for backwards compat)
@@ -136,20 +132,11 @@ def get_screen_info():
 
 
 def get_backing_scale():
-    """DEPRECATED: use detect_to_click() / click_to_detect() instead."""
+    """DEPRECATED: use detect_to_click() / click_to_detect(). Cross-platform scale."""
     if _screen_info["scale_x"] != 1.0:
         return _screen_info["scale_x"]
-    import platform as _plat
-    if _plat.system() == "Darwin":
-        try:
-            r = subprocess.run(
-                ["swift", "-e", 'import AppKit; print(NSScreen.main!.backingScaleFactor)'],
-                capture_output=True, text=True, timeout=10
-            )
-            return float(r.stdout.strip())
-        except Exception:
-            return 2.0
-    return 1.0
+    from gui_harness.platform_info.dpi import screen_scale
+    return screen_scale()
 
 
 # ═══════════════════════════════════════════
